@@ -35,15 +35,13 @@ public class SimpleTransferListener implements TransferListener {
 
 	@Override
 	public void transferSucceeded(TransferEvent event) {
-		System.out.println("FAILED: "+event.getResource());
+		System.out.println("          OK: "+event.getResource());
 		
 	}
 
 	@Override
 	public void transferFailed(TransferEvent event) {
-		System.out.println("FAILED: "+event.getResource());
-		// TODO Auto-generated method stub
-
+		System.out.println("      FAILED: "+event.getResource());
 	}
 
 }
