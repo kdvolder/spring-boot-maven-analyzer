@@ -8,7 +8,7 @@
  * Contributors:
  *     GoPivotal, Inc. - initial API and implementation
  *******************************************************************************/
-package org.springsource.ide.eclipse.boot.maven.analyzer;
+package org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery;
 
 /**
  * An instance of this class identifies a known external type. I.e. a type that

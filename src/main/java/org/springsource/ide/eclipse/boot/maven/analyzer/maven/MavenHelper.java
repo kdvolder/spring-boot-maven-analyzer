@@ -1,4 +1,4 @@
-package org.springsource.ide.eclipse.boot.maven.analyzer;
+package org.springsource.ide.eclipse.boot.maven.analyzer.maven;
 
 import java.io.File;
 import java.util.List;
@@ -31,7 +31,7 @@ import org.sonatype.aether.util.DefaultRepositorySystemSession;
  * Maven APIs are a bit bewildering to me (at this point). This class is an attempt to provide some
  * simple operations that I need. 
  * 
- * I do not expect this to be a great API as I'm only cobling this together as I figure out how to use
+ * Disclaimer: do not expect this to be a great API as I'm only cobling this together as I figure out how to use
  * maven apis. 
  *  
  * @author Kris De Volder

@@ -1,5 +1,7 @@
-package org.springsource.ide.eclipse.boot.maven.analyzer;
+package org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery;
 
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExternalTypeEntry;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExternalTypesDiscovery;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Requestor;
 
 import com.google.common.collect.HashMultimap;

@@ -1,4 +1,4 @@
-package org.springsource.ide.eclipse.boot.maven.analyzer;
+package org.springsource.ide.eclipse.boot.maven.analyzer.util;
 
 /**
  * Poor man's 'logging framework'.

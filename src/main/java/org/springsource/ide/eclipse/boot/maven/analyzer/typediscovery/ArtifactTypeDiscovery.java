@@ -1,6 +1,7 @@
-package org.springsource.ide.eclipse.boot.maven.analyzer;
+package org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery;
 
 import org.sonatype.aether.artifact.Artifact;
+import org.springsource.ide.eclipse.boot.maven.analyzer.JarTypeDiscovery;
 
 public class ArtifactTypeDiscovery extends JarTypeDiscovery {
 

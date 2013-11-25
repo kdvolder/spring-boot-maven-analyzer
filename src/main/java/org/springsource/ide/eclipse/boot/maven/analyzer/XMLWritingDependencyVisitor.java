@@ -15,6 +15,9 @@ import javax.xml.stream.XMLStreamWriter;
 import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.graph.DependencyNode;
 import org.sonatype.aether.graph.DependencyVisitor;
+import org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery.ArtifactTypeDiscovery;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.DependencyNodeUtil;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExternalTypeEntry;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Requestor;
 
 public class XMLWritingDependencyVisitor implements DependencyVisitor {
@@ -23,15 +26,12 @@ public class XMLWritingDependencyVisitor implements DependencyVisitor {
 	private Set<Artifact> seenArtifacts = new HashSet<Artifact>();
 	private XMLStreamWriter writer;
 	
-	private SpringProvidesInfo springProvides = new SpringProvidesInfo();
-	
 	private final boolean writeTypes = true;
 	
 	/**
 	 * If not null fq names of any types written to the xml file are added to this collection.
 	 */
 	private final HashSet<String> knownTypes = new HashSet<String>();
-	
 	
 	public XMLWritingDependencyVisitor(OutputStream out) throws XMLStreamException {
 		XMLOutputFactory factory = XMLOutputFactory.newInstance();
@@ -42,16 +42,6 @@ public class XMLWritingDependencyVisitor implements DependencyVisitor {
 	
 	public XMLWritingDependencyVisitor(String file) throws Exception {
 		this(new FileOutputStream(new File(file)));
-	}
-
-	private Artifact getArtifact(DependencyNode node) {
-		if (node!=null) {
-			org.sonatype.aether.graph.Dependency dep = node.getDependency();
-			if (dep!=null) {
-				return dep.getArtifact();
-			}
-		}
-		return null;
 	}
 
 	public void close() {
@@ -73,7 +63,7 @@ public class XMLWritingDependencyVisitor implements DependencyVisitor {
 	@Override
 	public boolean visitEnter(DependencyNode node) {
 		try {
-			Artifact artifact = getArtifact(node);
+			Artifact artifact = DependencyNodeUtil.getArtifact(node);
 			path.push(artifact);
 			if (artifact==null) {
 				//nothing interesting in this node. It's the children we care about
@@ -100,11 +90,11 @@ public class XMLWritingDependencyVisitor implements DependencyVisitor {
 						// passes, or building an in-memory representation of the graph to transform.
 						//The benefit of transforming the graph is that the graph will be smaller (i.e
 						// the provides info can be used to remove
-						String info = SpringProvidesInfo.getProvidesInfo(artifact);
-						if (info!=null) {
-							writer.writeEmptyElement("provides");
-							writer.writeAttribute("aids", info);
-						}
+//						String info = SpringProvidesInfo.getProvidesInfo(artifact);
+//						if (info!=null) {
+//							writer.writeEmptyElement("provides");
+//							writer.writeAttribute("aids", info);
+//						}
 					}
 				}
 				

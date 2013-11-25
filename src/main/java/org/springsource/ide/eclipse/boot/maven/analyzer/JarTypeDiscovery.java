@@ -17,6 +17,11 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery.ExternalTypeSource;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.AsmUtils;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExternalTypeEntry;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExternalTypesDiscovery;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.Logger;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Requestor;
 
 /**
@@ -26,7 +31,7 @@ import org.springsource.ide.eclipse.boot.maven.analyzer.util.Requestor;
  */
 public abstract class JarTypeDiscovery implements ExternalTypesDiscovery {
 
-	private static final boolean DEBUG = true; 
+	private static final boolean DEBUG = false; 
 	
 	private final File jarFile;
 	

@@ -1,7 +1,17 @@
+/*******************************************************************************
+ * Copyright (c) 2013 GoPivotal, Inc.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     GoPivotal, Inc. - initial API and implementation
+ *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer;
 
-import org.sonatype.aether.graph.DependencyNode;
-import org.sonatype.aether.graph.DependencyVisitor;
+import org.sonatype.aether.artifact.Artifact;
+import org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery.ArtifactVisitor;
 
 /**
  * Maven dependency visitor that gathers up info from spring.provides property files
@@ -12,17 +22,22 @@ import org.sonatype.aether.graph.DependencyVisitor;
  * 
  * @author Kris De Volder
  */
-public class SpringProvidesDependencyVisitor implements DependencyVisitor {
+public class SpringProvidesDependencyVisitor extends ArtifactVisitor {
 
+	private SpringProvidesInfo infos;
+
+	public SpringProvidesDependencyVisitor() {
+		this.infos = new SpringProvidesInfo();
+	}
+	
 	@Override
-	public boolean visitEnter(DependencyNode node) {
-		return false;
+	public void visitArtifact(Artifact artifact) {
+		infos.process(artifact);
 	}
 
-	@Override
-	public boolean visitLeave(DependencyNode node) {
-		// TODO Auto-generated method stub
-		return false;
+	public SpringProvidesInfo getInfo() {
+		return infos;
 	}
 
+	
 }

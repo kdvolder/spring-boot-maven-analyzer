@@ -8,9 +8,10 @@
  * Contributors:
  *     GoPivotal, Inc. - initial API and implementation
  *******************************************************************************/
-package org.springsource.ide.eclipse.boot.maven.analyzer;
+package org.springsource.ide.eclipse.boot.maven.analyzer.util;
 
-import org.springsource.ide.eclipse.boot.maven.analyzer.util.Assert;
+import org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery.ExternalType;
+import org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery.ExternalTypeSource;
 
 /**
  * Data object containing an ExternalType and a ExternalTypeSource.
