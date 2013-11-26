@@ -10,14 +10,18 @@
  *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer.graph;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
+import org.sonatype.aether.artifact.Artifact;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Assert;
 
 /**
@@ -40,8 +44,12 @@ public class DirectedGraph {
 	private MultiMap inverted; //Edges in the oposite direction.
 
 	public DirectedGraph() {
-		this.dgraph = new MultiValueMap();
-		this.inverted = new MultiValueMap();
+		this.dgraph = createEdgeStore();
+		this.inverted = createEdgeStore();
+	}
+
+	public MultiValueMap createEdgeStore() {
+		return MultiValueMap.decorate(new HashMap(), HashSet.class);
 	}
 	
 	public void addEdge(Object parent, Object child) {
@@ -73,7 +81,7 @@ public class DirectedGraph {
 	 *     result into (this allows client to determine the type of collection used 
 	 *     (e.g. HashSet versus LinkedHashSet).
 	 */
-	private Set getDescendants(Object node, Set descendants) {
+	private Set<Object> getDescendants(Object node, Set descendants) {
 		Assert.isLegal(descendants.isEmpty());
 		collectDescendants(node, descendants);
 		return descendants;
@@ -173,6 +181,52 @@ public class DirectedGraph {
 			}
 		});
 		return nodes;
+	}
+
+	/**
+	 * Collects the ancestors of a node and at the same time compute the length of
+	 * the shortest non-empty path to reach the ancestor.
+	 * <p>
+	 * The result is returnes as map associating each ancestor with the length of the path.
+	 */
+	public Map<Object, Integer> getAncestorsWithDistance(Object node) {
+		Map<Object, Integer> distances = new HashMap<Object, Integer>();
+		collectAncestorsWithDistance(node, 0, distances);
+		return distances;
+	}
+
+	private void collectAncestorsWithDistance(Object node, int currentDist, Map<Object, Integer> distances) {
+		//This algo isn't the best. It goes depth first which has a tendency to take longer paths before
+		// shorter ones if a node is reachable in more than one way. 
+		//More efficient algo does breadth first but it is a pain to implement with a queue of pairs etc.
+		Collection<Object> parents = getPredecessors(node);
+		for (Object child : parents) {
+			int newChildDist = currentDist+1;
+			Integer oldChildDist = distances.get(child);
+			if (oldChildDist==null || newChildDist < oldChildDist) {
+				//current path is shorter than any path found previously. Must adjust distance of
+				// the node and any of its children as well
+				distances.put(child, newChildDist);
+				collectAncestorsWithDistance(child, newChildDist, distances);
+			} else {
+				//Already reached the child before via a shorter path
+				// So nothing to do.
+			}
+		}
+	}
+
+	/**
+	 * Get successors but limit results to only those nodes of a given type.
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> Collection<T> getSuccessors(Artifact node, Class<T> klass) {
+		ArrayList<T> results = new ArrayList<T>();
+		for (Object child : getSuccessors(node)) {
+			if (klass.isAssignableFrom(child.getClass())) {
+				results.add((T) child);
+			}
+		}
+		return results;
 	}
 
 //	/**
