@@ -1,0 +1,74 @@
+Using retain closest rule for:  jboss-logging
+    spring-boot-starter-data-jpa dist 3
+    spring-boot-starter-shell-remote dist 4
+    spring-boot-starter-actuator dist 3
+==> AMBIGUOUS
+    spring-boot-starter-data-jpa dist 3
+    spring-boot-starter-actuator dist 3
+Using retain closest rule for:  jackson-annotations
+    spring-boot-starter-mobile dist 3
+    spring-boot-starter-websocket dist 3
+    spring-boot-starter-shell-remote dist 4
+    spring-boot-starter-web dist 2
+    spring-boot-starter-actuator dist 3
+==> RESOLVED
+    spring-boot-starter-web dist 2
+Using retain closest rule for:  hibernate-validator
+    spring-boot-starter-shell-remote dist 2
+    spring-boot-starter-actuator dist 1
+==> RESOLVED
+    spring-boot-starter-actuator dist 1
+Using retain closest rule for:  jackson-core
+    spring-boot-starter-mobile dist 2
+    spring-boot-starter-websocket dist 2
+    spring-boot-starter-web dist 1
+==> RESOLVED
+    spring-boot-starter-web dist 1
+Using retain closest rule for:  antlr
+    spring-boot-starter-data-jpa dist 1
+    spring-boot-starter-shell-remote dist 2
+==> RESOLVED
+    spring-boot-starter-data-jpa dist 1
+Using retain closest rule for:  validation-api
+    spring-boot-starter-shell-remote dist 2
+    spring-boot-starter-actuator dist 1
+==> RESOLVED
+    spring-boot-starter-actuator dist 1
+Using retain closest rule for:  log4j-over-slf4j
+    spring-boot-starter-shell-remote dist 2
+    spring-boot-starter-actuator dist 1
+==> RESOLVED
+    spring-boot-starter-actuator dist 1
+Using retain closest rule for:  tomcat-embed-logging-juli
+    spring-boot-starter-tomcat dist 1
+    spring-boot-starter-mobile dist 3
+    spring-boot-starter-websocket dist 1
+    spring-boot-starter-web dist 2
+==> AMBIGUOUS
+    spring-boot-starter-tomcat dist 1
+    spring-boot-starter-websocket dist 1
+Using retain closest rule for:  spring-retry
+    spring-boot-starter-batch dist 1
+    spring-boot-starter-integration dist 1
+==> AMBIGUOUS
+    spring-boot-starter-batch dist 1
+    spring-boot-starter-integration dist 1
+Using retain closest rule for:  tomcat-juli
+    spring-boot-starter-jdbc dist 1
+    spring-boot-starter-data-jpa dist 2
+==> RESOLVED
+    spring-boot-starter-jdbc dist 1
+
+Using retain closest rule for:  aopalliance
+    spring-boot-starter-jdbc dist 1
+    spring-boot-starter-websocket dist 3
+    spring-boot-starter-web dist 2
+    spring-boot-starter-security dist 1
+    spring-boot-starter-integration dist 2
+    spring-boot-starter-mobile dist 3
+    spring-boot-starter-data-jpa dist 2
+    spring-boot-starter-aop dist 1
+==> AMBIGUOUS
+    spring-boot-starter-jdbc dist 1
+    spring-boot-starter-security dist 1
+    spring-boot-starter-aop dist 1
