@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.apache.maven.DefaultMaven;
 import org.apache.maven.Maven;
-import org.apache.maven.cli.ConsoleMavenTransferListener;
 import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionRequestPopulationException;
@@ -97,7 +96,7 @@ public class MavenHelper {
 
 	public MavenExecutionRequest createExecutionRequest() throws MavenExecutionRequestPopulationException, ComponentLookupException {
 		MavenExecutionRequest request = new DefaultMavenExecutionRequest();
-		request.setTransferListener(new SimpleTransferListener());
+		//request.setTransferListener(new SimpleTransferListener());
 		//request.setTransferListener(new ConsoleMavenTransferListener(System.out)); //disabled too much noise!
 		return lookup(MavenExecutionRequestPopulator.class).populateDefaults(request);
 	}

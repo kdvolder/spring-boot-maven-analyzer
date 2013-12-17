@@ -44,7 +44,7 @@ public class TypeDependencyGraphXmlWriter {
 	
 	public TypeDependencyGraphXmlWriter(OutputStream out, DirectedGraph graph) throws Exception {
 		XMLOutputFactory factory = XMLOutputFactory.newInstance();
-		writer = factory.createXMLStreamWriter(out, "utf8");
+		writer = factory.createXMLStreamWriter(out, "UTF-8");
 		this.graph = graph;
 		writer.writeStartDocument();
 		writer.writeStartElement("document");

@@ -46,7 +46,7 @@ public class GraphSimplifier {
 	 * it is added to a new spring boot app automatically it can be
 	 * removed via 'Edit Starters' dialog.
 	 */
-	public static final String[] DEFAULT_STARTERS = {
+	private String[] DEFAULT_STARTERS = {
 		"spring-boot-starter", "spring-boot-starter-test"
 	};
 	
@@ -56,7 +56,7 @@ public class GraphSimplifier {
 	 * bigger because single type edge is copied onto multiple 
 	 * preferred nodes.
 	 */
-	public boolean moveAmbiguous = true;
+	private boolean moveAmbiguous = true;
 	
 	/**
 	 * If set to true, then cases where a jar is provided by multiple starters
@@ -67,7 +67,7 @@ public class GraphSimplifier {
 	 * as if it is provided by neither starter (thus the jar itself will 
 	 * become the preferred way of adding itself to the classpath).
 	 */
-	public boolean useClosestHeuristic = false;
+	private boolean useClosestHeuristic = false;
 		
 	public boolean isWarningExempt(Artifact a) {
 		if (isWarningExempt(a.getArtifactId())) {
@@ -117,6 +117,10 @@ public class GraphSimplifier {
 	 * An edge in the graph is 'redundant' if it is impied by other edges.
 	 * I.e. if a dependency is expressed directly as well as implied.
 	 * Then the expressed dependency is redundant.
+	 * 
+	 * Note this method no used aymore as it didn't seem to improve the
+	 * results of using 'closest' heuristic but actually sometimes
+	 * had the oposite effect.
 	 */
 	private void removeRedundantEdges() {
 		ArrayList<Object> nodes = new ArrayList<Object>(graph.getNodes());
@@ -163,18 +167,19 @@ public class GraphSimplifier {
 				Collection<Object> types = graph.getSuccessors(node);
 				if (types.isEmpty()) {
 					deleteIfEmpty(node);
-				} else {
-					//This jar has some types. Check if it has more than one way to be
-					// added to the cp.
-					Map<Object, Integer> ancestors = graph.getAncestorsWithDistance(node);
-					if (!ancestors.isEmpty() && !isWarningExempt((Artifact)node)) {
-						//warn("Ambigous: types from "+node.getGroupId()+":"+node.getArtifactId()+" can also be added via:");
-						for (Object _parent : ancestors.keySet()) {
-							Artifact parent = (Artifact) _parent;
-							//warn("     "+parent.getGroupId()+":"+parent.getArtifactId()+"(distance "+ ancestors.get(parent)+")");
-						}
-					}
 				}
+//				else {
+//					//This jar has some types. Check if it has more than one way to be
+//					// added to the cp and maybe log some warnings.
+//					Map<Object, Integer> ancestors = graph.getAncestorsWithDistance(node);
+//					if (!ancestors.isEmpty() && !isWarningExempt((Artifact)node)) {
+//						//warn("Ambigous: types from "+node.getGroupId()+":"+node.getArtifactId()+" can also be added via:");
+//						for (Object _parent : ancestors.keySet()) {
+//							Artifact parent = (Artifact) _parent;
+//							//warn("     "+parent.getGroupId()+":"+parent.getArtifactId()+"(distance "+ ancestors.get(parent)+")");
+//						}
+//					}
+//				}
 			}
 		}
 	}
@@ -199,7 +204,6 @@ public class GraphSimplifier {
 	private boolean isEmpty(Object node) {
 		return graph.getSuccessors(node).isEmpty();
 	}
-
 	
 	private void detectVersionConflicts() {
 		Map<String, Artifact> idmap = new HashMap<String, Artifact>();
@@ -422,7 +426,7 @@ public class GraphSimplifier {
 		}
 	}
 
-// Implementation that uses the spring.provides info in starter jars.
+// Implementation that *only* uses the spring.provides info in starter jars.
 //	public Collection<Artifact> getPreferedProviders(Artifact node) {
 //		return providesInfo.getPreferedProviders(node.getArtifactId());
 //	}

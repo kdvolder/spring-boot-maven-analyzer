@@ -11,10 +11,14 @@
 package org.springsource.ide.eclipse.boot.maven.analyzer;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.util.List;
 
+import javax.servlet.ServletOutputStream;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.project.MavenProject;
@@ -25,6 +29,7 @@ import org.springsource.ide.eclipse.boot.maven.analyzer.graph.GraphBuildingDepen
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.TypeDependencyGraphXmlWriter;
 import org.springsource.ide.eclipse.boot.maven.analyzer.maven.DependencyCollector;
 import org.springsource.ide.eclipse.boot.maven.analyzer.maven.MavenHelper;
+import org.springsource.ide.eclipse.boot.maven.analyzer.output.Outputter;
 
 
 /**
@@ -33,10 +38,13 @@ import org.springsource.ide.eclipse.boot.maven.analyzer.maven.MavenHelper;
  */
 public class BootDependencyAnalyzer {
 
+	static Log log = LogFactory.getLog(BootDependencyAnalyzer.class);
+	
 	/**
 	 * Example of how to use this analyzer.
 	 */
 	public static void main(String[] args) throws Exception {
+		log.info("Starting BootDependencyAnalyzer...");
 		BootDependencyAnalyzer analyzer = new BootDependencyAnalyzer();
 		analyzer.setPomFile(new File("sample/pom.xml"));
 		analyzer.setXmlFile(new File("boot-completion-data.txt"));
@@ -44,16 +52,47 @@ public class BootDependencyAnalyzer {
 		analyzer.run();
 	}
 
+	/**
+	 * Set a file to which the xml dependency data should be written.
+	 */
+	public void setXmlFile(File file) {
+		Outputter outFile = Outputter.toFile(file);
+		setXmlOutputter(outFile);
+	}
+
+	public synchronized void setXmlOutputter(Outputter outFile) {
+		if (xmlOutput!=null) {
+			xmlOutput.dispose();
+		}
+		xmlOutput = outFile;
+	}
+
 	private MavenHelper maven;
-	private File pomFile = new File("sample/pom.xml");
-	private File xmlFile = null;
+	private File pomFile = defaultPomFile();
 	
 	private boolean useSpringProvidesInfo = false;
 	private SpringProvidesInfo providesInfo = null;
 	
+	/**
+	 * Where to write the xml file that is the main result of this analysis.
+	 * If not explicitly set the result is printed to System.out
+	 */
+	private Outputter xmlOutput = null;
+	
 	public File getPomFile() {
+		if (pomFile==null) {
+			pomFile = defaultPomFile();
+		}
 		return pomFile;
 	}
+	private File defaultPomFile() {
+		try {
+			return new File(getClass().getClassLoader().getResource("pom.xml").toURI());
+		} catch (URISyntaxException e) {
+			throw new Error(e);
+		}
+	}
+
 	public void setPomFile(String path) {
 		this.pomFile = new File(path);
 	}
@@ -65,15 +104,12 @@ public class BootDependencyAnalyzer {
 		this.useSpringProvidesInfo = useSpringProvidesInfo;
 	}
 	
-	public void setXmlFile(File xmlFile) {
-		this.xmlFile = xmlFile;
-	}
-	
-	public OutputStream openXmlOutputStream() throws Exception {
-		if (xmlFile!=null) {
-			return new FileOutputStream(xmlFile);
+	private synchronized Outputter getXmlOutputter() throws Exception {
+		if (xmlOutput==null) {
+			//Ensure we have some place to write to by default
+			xmlOutput = Outputter.toStream(System.out);
 		}
-		return System.out;
+		return xmlOutput;
 	}
 
 
@@ -81,10 +117,8 @@ public class BootDependencyAnalyzer {
 		//TODO: dependency injection of some sort needed here? (configure various maven options).
 		maven = new MavenHelper();
 	}
-	
 
-
-	private void run() throws Exception {
+	public void run() throws Exception {
 		File pomFile = getPomFile();
 		MavenProject project = maven.readMavenProject(pomFile);
 		
@@ -115,36 +149,28 @@ public class BootDependencyAnalyzer {
 		tree.accept(graphBuilder);
 		DirectedGraph graph = graphBuilder.getGraph();
 		
+		//Step 3 massage the graph to disambiguate type suggestions based on springprovides infos.
 		if (useSpringProvidesInfo) {
 			GraphSimplifier.simplify(graph, providesInfo);
 		}
-		//TODO: Step 3 massage the graph with to disambiguate type suggestions based on springprovides infos.
-		
 		
 		//Step 4: save massaged graph to designated output stream.
 		saveAsXML(graph);
 		
-		//Below is the old way of writing the graph data directly into an xml file without actually building it
-		// into a in-memory data structure. That's obviouslty more efficient but also much harder to manipulate the graph
-//		XMLWritingDependencyVisitor visitor = new XMLWritingDependencyVisitor("boot-completion-data-REFERENCE.txt");
-//		tree.accept(visitor);
-//		visitor.close();
-		
-//		System.out.println("# types = "+visitor.getKnownTypes().size());
-
 	}
 
 
 	public void saveAsXML(DirectedGraph graph) throws Exception {
-		OutputStream out = openXmlOutputStream();
+		Outputter outputter = getXmlOutputter();
 		try {
-			new TypeDependencyGraphXmlWriter(out, graph);
+			new TypeDependencyGraphXmlWriter(outputter.getOutputStream(), graph);
 		} finally {
-			//Careful not to close System.out. So only close stream
-			// if it was created from a file.
-			if (xmlFile!=null && out!=null) {
-				out.close();
-			}
+			outputter.dispose();
 		}
 	}
+
+	public void setXmlOut(OutputStream out) {
+		setXmlOutputter(Outputter.toStream(out));
+	}
+
 }
