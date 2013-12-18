@@ -29,7 +29,7 @@ import org.springsource.ide.eclipse.boot.maven.analyzer.graph.GraphBuildingDepen
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.TypeDependencyGraphXmlWriter;
 import org.springsource.ide.eclipse.boot.maven.analyzer.maven.DependencyCollector;
 import org.springsource.ide.eclipse.boot.maven.analyzer.maven.MavenHelper;
-import org.springsource.ide.eclipse.boot.maven.analyzer.output.Outputter;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.Outputter;
 
 
 /**
