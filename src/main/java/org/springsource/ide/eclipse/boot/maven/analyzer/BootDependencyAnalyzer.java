@@ -15,8 +15,6 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import javax.servlet.ServletOutputStream;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.maven.model.Dependency;

@@ -1,3 +1,13 @@
+/*******************************************************************************
+ * Copyright (c) 2013 GoPivotal, Inc.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     GoPivotal, Inc. - initial API and implementation
+ *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer.maven;
 
 import java.io.File;
@@ -109,6 +119,9 @@ public class MavenHelper {
 	}
 
 	public RepositorySystem getRepositorySystem() throws ComponentLookupException {
+		//TODO: Don't use plexus for this. Rather investigate using aether more directly
+		//See here for some nice looking examples on how to do that:
+		// http://wiki.eclipse.org/Aether
 		return lookup(RepositorySystem.class);
 	}
 

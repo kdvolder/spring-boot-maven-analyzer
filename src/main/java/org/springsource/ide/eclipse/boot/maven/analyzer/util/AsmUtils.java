@@ -77,15 +77,15 @@ public class AsmUtils {
 	/**
 	 * Uses ASM to read a .class file and determine if it contains a public type.
 	 */
-	public static boolean isPublic(InputStream classFileInput) {
-		try {
+	public static boolean isPublic(InputStream classFileInput) throws Exception {
+//		try {
 			ClassReader reader = new ClassReader(classFileInput);
 			IsPublicVisitor isPublicVisitor = new IsPublicVisitor();
 			reader.accept(isPublicVisitor, ClassReader.SKIP_CODE);
 			return isPublicVisitor.isPublic;
-		} catch (Exception e) {
-			Logger.log(e);
-		}
-		return false;
+//		} catch (Exception e) {
+//			Logger.log(e);
+//		}
+//		return false;
 	}
 }

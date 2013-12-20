@@ -17,8 +17,11 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery.ExternalTypeSource;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.AsmUtils;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExceptionUtil;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExternalTypeEntry;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExternalTypesDiscovery;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Logger;
@@ -32,6 +35,8 @@ import org.springsource.ide.eclipse.boot.maven.analyzer.util.Requestor;
 public abstract class JarTypeDiscovery implements ExternalTypesDiscovery {
 
 	private static final boolean DEBUG = false; 
+	
+	static Log log = LogFactory.getLog(JarTypeDiscovery.class);
 	
 	private final File jarFile;
 	
@@ -69,10 +74,16 @@ public abstract class JarTypeDiscovery implements ExternalTypesDiscovery {
 								System.out.println("Filtered type (not public): "+e.getName());
 							}
 						}
+					} catch (Exception e2) {
+						String msg = ExceptionUtil.getMessage(e2);
+						System.err.println("Error in jar file: "+jarFile+"\n"
+								+ "   entry: "+path+"\n"
+								+ "   msg  : "+msg);
+						continu = false; //zip file corrupt? bail out here now.
 					} finally {
 						try {
 							classFile.close();
-						} catch (IOException e2) {
+						} catch (IOException ignore) {
 							//ignore
 						}
 					}
