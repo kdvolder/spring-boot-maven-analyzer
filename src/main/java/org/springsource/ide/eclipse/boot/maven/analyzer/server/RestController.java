@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer.server;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.concurrent.Future;
 
@@ -23,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.IOUtil;
 
 @Controller
 public class RestController {
@@ -94,6 +97,19 @@ public class RestController {
 		String filePath = req.getServletPath().substring("/file".length());
 //		System.out.println("Request for file: "+filePath);
 		ServletUtils.sendFile(new File(filePath), resp);
+	}
+
+	@RequestMapping(value="/ulimit/{opt}", produces = {"text/plain; charset=UTF-8"})
+	@ResponseBody
+	public String ulimitDashOpt(@PathVariable("opt") String opt) throws Exception {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		Process process = Runtime.getRuntime().exec(new String[] {
+			"bash", "-c", "ulimit -"+opt	
+		});
+		process.waitFor();
+		IOUtil.pipe(process.getInputStream(), out);
+		IOUtil.pipe(process.getErrorStream(), out);
+		return out.toString("UTF-8");
 	}
 
 
