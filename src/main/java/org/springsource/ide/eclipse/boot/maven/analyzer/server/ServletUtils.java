@@ -45,8 +45,11 @@ public class ServletUtils {
 		
 		for (String name : names) {
 			writer.print("<li>");
-			//TODO: properly encode url below?
-			writer.print("<a href=\"/file"+dir+"/"+name+"\">"+name+"</a>");
+			String slashedDir = dir.toString();
+			if (!slashedDir.endsWith("/")) {
+				slashedDir = slashedDir+"/";
+			}
+			writer.print("<a href=\"/file"+slashedDir+name+"\">"+name+"</a>");
 			writer.println("</li>");
 		}
 		

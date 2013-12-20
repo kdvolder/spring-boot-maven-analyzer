@@ -74,7 +74,7 @@ public class RestController {
 				resp.setCharacterEncoding("utf8");
 				resp.getWriter().println("I'm working on it... ask me again later");
 			} else {
-				//Done could be a actual result or an error
+				//Done: could be a actual result or an error
 				byte[] resultData = result.get(); //this will throw in case of an error in processing.  Let the framework handle this.
 				resp.setStatus(HttpServletResponse.SC_OK);
 				resp.setContentType("text/xml");
@@ -85,7 +85,6 @@ public class RestController {
 	
 	@RequestMapping("/file/**")
 	public void getFile(HttpServletRequest req, HttpServletResponse resp) throws Exception {
-		System.out.println("Request for file: "+req.getPathTranslated());
 //		resp.setStatus(HttpServletResponse.SC_OK);
 //		resp.setContentType("text/plain");
 //		resp.getWriter().println("Contextpath: '"+req.getContextPath()+"'");
@@ -93,7 +92,7 @@ public class RestController {
 //		resp.getWriter().println("PathInfo   : '"+req.getPathInfo()+"'");
 		
 		String filePath = req.getServletPath().substring("/file".length());
-		System.out.println("Request for file: "+filePath);
+//		System.out.println("Request for file: "+filePath);
 		ServletUtils.sendFile(new File(filePath), resp);
 	}
 

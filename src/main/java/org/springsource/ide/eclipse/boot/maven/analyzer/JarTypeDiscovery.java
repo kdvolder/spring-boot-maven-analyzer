@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.logging.Log;
@@ -89,6 +90,10 @@ public abstract class JarTypeDiscovery implements ExternalTypesDiscovery {
 					}
 				}
 			}
+		} catch (ZipException e) {
+			String msg = ExceptionUtil.getMessage(e);
+			System.err.println("Error in jar file: "+jarFile+"\n"
+					+ "   msg  : "+msg);
 		} catch (Exception e) {
 			Logger.log(e);
 		} finally {
