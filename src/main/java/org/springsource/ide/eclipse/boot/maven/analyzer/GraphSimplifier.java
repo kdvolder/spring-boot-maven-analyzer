@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.sonatype.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.Artifact;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.DirectedGraph;
 import org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery.ExternalType;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Assert;

@@ -11,7 +11,8 @@ import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.sonatype.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.Artifact;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExceptionUtil;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Logger;
 
 public class SpringProvidesInfo {
@@ -27,8 +28,8 @@ public class SpringProvidesInfo {
 	}
 
 	public static String getProvidesInfo(Artifact artifact) {
+		File jarFile = artifact.getFile();
 		try {
-			File jarFile = artifact.getFile();
 			if (jarFile!=null && jarFile.getName().toLowerCase().endsWith(".jar")) {
 				ZipFile zipFile = new ZipFile(jarFile);
 				try {
@@ -48,7 +49,7 @@ public class SpringProvidesInfo {
 				}
 			}
 		} catch (Exception e) {
-			Logger.log(e);
+			Logger.error("Bad zip ("+jarFile+")? " +ExceptionUtil.getMessage(e));
 		}
 		return null;
 	}

@@ -33,8 +33,14 @@ import org.codehaus.plexus.PlexusContainer;
 import org.codehaus.plexus.PlexusContainerException;
 import org.codehaus.plexus.classworlds.ClassWorld;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.util.DefaultRepositorySystemSession;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.transfer.TransferCancelledException;
+import org.eclipse.aether.transfer.TransferEvent;
+import org.eclipse.aether.transfer.TransferListener;
+import org.eclipse.aether.util.repository.SimpleArtifactDescriptorPolicy;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExceptionUtil;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.Logger;
 
 /**
  * Maven APIs are a bit bewildering to me (at this point). This class is an attempt to provide some
@@ -114,12 +120,72 @@ public class MavenHelper {
 	public DefaultRepositorySystemSession createRepositorySession(MavenExecutionRequest request) throws ComponentLookupException {
 		DefaultRepositorySystemSession session = (DefaultRepositorySystemSession) ((DefaultMaven) lookup(Maven.class))
 				.newRepositorySession(request);
-		session.setIgnoreInvalidArtifactDescriptor(true);
+		session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(/*ignoreMissing*/true, /*ignoreInvalid*/true));
+		session.setTransferListener(new TransferListener() {
+			
+			@Override
+			public void transferSucceeded(TransferEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void transferStarted(TransferEvent arg0)
+					throws TransferCancelledException {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void transferProgressed(TransferEvent arg0)
+					throws TransferCancelledException {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void transferInitiated(TransferEvent arg0)
+					throws TransferCancelledException {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void transferFailed(TransferEvent e) {
+				if (!ignore(e)) { 
+					Logger.error("Transfer Failed: "+e.getResource().getResourceName());
+					if (e.getException()!=null) {
+						Logger.error("   "+ExceptionUtil.getMessage(e.getException()));
+					}
+				}
+			}
+			
+			private boolean ignore(TransferEvent evt) {
+				Exception e = evt.getException();
+				if (e!=null) {
+					String ename = e.getClass().getName();
+					if (ename.contains("ResourceDoesNotExistException")
+					||  ename.contains("ArtifactNotFoundException")) {
+						return true;
+					}
+				} 
+				return false;
+			}
+
+			@Override
+			public void transferCorrupted(TransferEvent e)
+					throws TransferCancelledException {
+				Logger.error("Transfer corrupted: "+e.getResource().getResourceName());
+				if (e.getException()!=null) {
+					Logger.log(e.getException());
+				}
+			}
+		});
 		return session;
 	}
 
 	public RepositorySystem getRepositorySystem() throws ComponentLookupException {
-		//TODO: Don't use plexus for this. Rather investigate using aether more directly
+		//TODO: Don't use plexus for this. Rather investigate using eclipse aether more directly
 		//See here for some nice looking examples on how to do that:
 		// http://wiki.eclipse.org/Aether
 		return lookup(RepositorySystem.class);

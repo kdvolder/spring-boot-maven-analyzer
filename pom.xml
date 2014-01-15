@@ -12,36 +12,71 @@
 		<version>0.5.0.BUILD-SNAPSHOT</version>
 	</parent>
 
+	<properties>
+		<start-class>org.springsource.ide.eclipse.boot.maven.analyzer.server.RestServer</start-class>
+	</properties>
+
 	<dependencies>
  		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
+		
+		<!-- Utilities -->
+		
 		<dependency>
 			<groupId>asm</groupId>
 			<artifactId>asm</artifactId>
 			<version>3.3.1</version>
 		</dependency>
-		<dependency>
+ 		<dependency>
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 			<version>3.2.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-core</artifactId>
-			<version>3.0.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<!--  <version>1.7.2</version> -->
 		</dependency>
+
+		<!-- spring boot and friends -->
+
 		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-embedder</artifactId>
-			<version>3.0.4</version>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+<!-- 	<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-integration</artifactId>
+		</dependency>
+ -->
+
+		<!-- for doing maveny things
+		   See http://stackoverflow.com/questions/4206679/can-anyone-give-a-good-example-of-using-org-apache-maven-cli-mavencli-programatt
+		  -->
+		
+		<dependency>
+		    <groupId>org.apache.maven</groupId>
+		    <artifactId>maven-embedder</artifactId>
+		    <version>3.1.1</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.eclipse.aether</groupId>
+		    <artifactId>aether-connector-wagon</artifactId>
+		    <version>0.9.0.M2</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.maven.wagon</groupId>
+		    <artifactId>wagon-http-lightweight</artifactId>
+		    <version>2.5</version>
+		</dependency>
+			
+<!--	<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-core</artifactId>
+			<version>3.0.4</version>
+		</dependency> 
 		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-compat</artifactId>
@@ -73,14 +108,7 @@
 			<artifactId>wagon-file</artifactId>
 			<version>2.2</version>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-integration</artifactId>
-		</dependency>
+		-->
 	</dependencies>
 
 	<repositories>

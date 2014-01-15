@@ -18,14 +18,11 @@ import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.project.MavenProject;
-import org.sonatype.aether.artifact.ArtifactTypeRegistry;
-import org.sonatype.aether.collection.CollectRequest;
-import org.sonatype.aether.collection.DependencyGraphTransformer;
-import org.sonatype.aether.graph.DependencyNode;
-import org.sonatype.aether.resolution.DependencyRequest;
-import org.sonatype.aether.util.DefaultRepositorySystemSession;
-import org.sonatype.aether.util.graph.transformer.ChainedDependencyGraphTransformer;
-import org.sonatype.aether.util.graph.transformer.JavaEffectiveScopeCalculator;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.artifact.ArtifactTypeRegistry;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.DependencyNode;
+import org.eclipse.aether.resolution.DependencyRequest;
 
 /**
  * Provides methods build up a request to collect dependencies and eventually retrieve the result.
@@ -63,16 +60,16 @@ public class DependencyCollector {
 		MavenExecutionRequest executionRequest = maven.createExecutionRequest();
 		DefaultRepositorySystemSession session = maven.createRepositorySession(executionRequest);
 
-	    DependencyGraphTransformer transformer = new ChainedDependencyGraphTransformer(
-	    		new JavaEffectiveScopeCalculator()
+//	    DependencyGraphTransformer transformer = new ChainedDependencyGraphTransformer(
+//	    		new JavaEffectiveScopeCalculator()
 //	            new NearestVersionConflictResolver() 
 	    			//Watch out the nearest NearestVersionConflictResolver from maven 'aether' package.
 	    			//destroys the graph's structure (it resolves conflicts by deleting nodes from the graph).
 	    			//Although all artfifacts we care about are still in the graph, deleting nodes
 	    			//removes also the corresponding 'dependsOn' links which we also care about.
 	    			//TODO: implement an alternative
-	    );
-	    session.setDependencyGraphTransformer(transformer);
+//	    );
+//	    session.setDependencyGraphTransformer(transformer);
 
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {

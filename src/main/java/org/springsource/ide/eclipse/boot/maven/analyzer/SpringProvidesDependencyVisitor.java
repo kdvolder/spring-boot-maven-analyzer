@@ -10,7 +10,7 @@
  *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer;
 
-import org.sonatype.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.Artifact;
 import org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery.ArtifactVisitor;
 
 /**

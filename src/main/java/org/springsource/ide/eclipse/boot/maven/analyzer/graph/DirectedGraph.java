@@ -21,7 +21,7 @@ import java.util.Set;
 
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
-import org.sonatype.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.Artifact;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Assert;
 
 /**

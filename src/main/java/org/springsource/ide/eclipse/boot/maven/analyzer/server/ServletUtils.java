@@ -54,12 +54,18 @@ public class ServletUtils {
 		String[] names = dir.list();
 		
 		for (String name : names) {
+			File file = new File(dir, name);
 			writer.print("<li>");
 			String slashedDir = dir.toString();
 			if (!slashedDir.endsWith("/")) {
 				slashedDir = slashedDir+"/";
 			}
-			writer.print("<a href=\"/file"+slashedDir+name+"\">"+name+"</a>");
+			writer.print("<a href=\"/file"+slashedDir+name+"\">"+name+ "</a>");
+			if (file.isFile()) {
+				writer.print(" "+file.length());
+			} else if (file.isDirectory()) {
+				writer.print("/");
+			}
 			writer.println("</li>");
 		}
 		

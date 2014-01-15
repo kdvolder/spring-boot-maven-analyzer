@@ -3,10 +3,9 @@ package org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.maven.model.IssueManagement;
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.graph.DependencyNode;
-import org.sonatype.aether.graph.DependencyVisitor;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.graph.DependencyNode;
+import org.eclipse.aether.graph.DependencyVisitor;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.DependencyNodeUtil;
 
 /**

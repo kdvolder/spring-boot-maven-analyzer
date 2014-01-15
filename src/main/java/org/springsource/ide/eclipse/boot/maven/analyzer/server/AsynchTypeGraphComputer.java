@@ -11,85 +11,52 @@
 package org.springsource.ide.eclipse.boot.maven.analyzer.server;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import javax.servlet.http.HttpServletResponse;
-
-import org.codehaus.plexus.PlexusContainerException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springsource.ide.eclipse.boot.maven.analyzer.BootDependencyAnalyzer;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.SimpleCache;
 
 /**
  * Computes data for typegraph http request asyncronously, returning a Future.
  * This is because computing the graph can take a very long time and we can't
  * let the request be hanging that long. Most like it will be terminated
  * by impatient clients or nginx. On CF it will even kill and restart the
- * entire if request don't get handled within a certain time.
+ * entire instance if request don't get handled within a certain time.
  */
 @Component
 public class AsynchTypeGraphComputer {
 
-	private ExecutorService executor = Executors.newSingleThreadExecutor(); //TODO: inject with spring?
+	/**
+	 * Use single thread executor because it is not safe to run multiple maven operations
+	 * in parallel.
+	 */
+	private ExecutorService executor = Executors.newSingleThreadExecutor();
 
-	public AsynchTypeGraphComputer() {
-	}
-
-	@Autowired
-	private CacheManager caches;
-	
-	@Cacheable("default")
-	public synchronized Future<byte[]> getTypeGraphResponseBody(final String springBootVersion) {
-		return executor.submit(new Callable<byte[]>() {
-			@Override
-			public byte[] call() throws Exception {
-				return computeTypeGraph(springBootVersion);
-			}
-		});
-	}
-	
-
-	private byte[] computeTypeGraph(String springBootVersion) throws Exception, PlexusContainerException, IOException {
-		int retries = 3; //Flakyness of maven seems to make this fail often when starting from empty maven cache.
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		while (--retries>0) {
+	private SimpleCache<String, byte[]> cache = new SimpleCache<String, byte[]>(executor) {
+		@Override
+		protected byte[] compute(String springBootVersion) throws Exception {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			try {
-				try {
-					if (springBootVersion.contains("XXX")) {
-						throw new Exception("Bad version: "+springBootVersion);
-					}
-					BootDependencyAnalyzer analyzer = new BootDependencyAnalyzer();
-					analyzer.setXmlOut(out);
-					analyzer.setUseSpringProvidesInfo(true); 
-					analyzer.run();
-					return out.toByteArray();
-				} finally {
-					//System.out.println(out.toString());
-					out.close();
+				//TODO: do some proper validation of version string
+				if (springBootVersion.contains("XXX")) {
+					throw new Exception("Bad version: "+springBootVersion);
 				}
-			} catch (Exception e) {
-				if (retries>0) {
-					//Is tempting to reset the buffer like so:
-					// out.reset()
-					//But it seems that leads to concurrency issues as some stuff is still writing into the buffer even after we
-					// received this exception.
-					//Reallocating the buffer avoids that problem.
-					out = new ByteArrayOutputStream(); 
-				} else {
-					throw e;
-				}
+				BootDependencyAnalyzer analyzer = new BootDependencyAnalyzer();
+				analyzer.setXmlOut(out);
+				analyzer.setUseSpringProvidesInfo(true); 
+				analyzer.run();
+				return out.toByteArray();
+			} finally {
+				//System.out.println(out.toString());
+				out.close();
 			}
 		}
-		return out.toByteArray();
-	}
+	};
 	
+	public Future<byte[]> getTypeGraphResponseBody(final String springBootVersion) {
+		return cache.get(springBootVersion);
+	}
 }

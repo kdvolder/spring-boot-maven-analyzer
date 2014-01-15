@@ -12,7 +12,6 @@ package org.springsource.ide.eclipse.boot.maven.analyzer;
 
 import java.io.File;
 import java.io.OutputStream;
-import java.net.URISyntaxException;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -21,7 +20,8 @@ import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.PlexusContainerException;
-import org.sonatype.aether.graph.DependencyNode;
+import org.eclipse.aether.graph.DependencyNode;
+import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.DirectedGraph;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.GraphBuildingDependencyVisitor;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.TypeDependencyGraphXmlWriter;
@@ -66,7 +66,7 @@ public class BootDependencyAnalyzer {
 	}
 
 	private MavenHelper maven;
-	private File pomFile = defaultPomFile();
+	private File pomFile = Defaults.pomFile();
 	
 	private boolean useSpringProvidesInfo = false;
 	private SpringProvidesInfo providesInfo = null;
@@ -79,18 +79,10 @@ public class BootDependencyAnalyzer {
 	
 	public File getPomFile() {
 		if (pomFile==null) {
-			pomFile = defaultPomFile();
+			pomFile = Defaults.pomFile();
 		}
 		return pomFile;
 	}
-	private File defaultPomFile() {
-		try {
-			return new File(getClass().getClassLoader().getResource("pom.xml").toURI());
-		} catch (URISyntaxException e) {
-			throw new Error(e);
-		}
-	}
-
 	public void setPomFile(String path) {
 		this.pomFile = new File(path);
 	}
@@ -134,7 +126,7 @@ public class BootDependencyAnalyzer {
 		
 		DependencyNode tree = dependencies.resolveDependencyTree();
 		
-//		//Step 1 use collect the infos from 'spring.provides' properties file so they can be used in the next stage.
+		//Step 1 collect the infos from 'spring.provides' properties file so they can be used in the next stage.
 		if (useSpringProvidesInfo) {
 			SpringProvidesDependencyVisitor springProvidesCollector = new SpringProvidesDependencyVisitor();
 			tree.accept(springProvidesCollector);

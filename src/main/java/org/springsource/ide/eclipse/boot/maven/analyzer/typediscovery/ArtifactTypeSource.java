@@ -10,7 +10,7 @@
  *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery;
 
-import org.sonatype.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.Artifact;
 
 /**
  * An instance of this class represents a 'source' from which we can get
