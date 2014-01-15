@@ -16,6 +16,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springsource.ide.eclipse.boot.maven.analyzer.server.AsynchTypeGraphComputer;
+
 /**
  * Simple cache implementation that stores the result of some computations for a limited amount of time
  * (this is to ensure that cached values are periodically recomputed).
@@ -23,11 +27,14 @@ import java.util.concurrent.Future;
  * The cache uses Futures so that it can cache a computation result even before it is computed thereby
  * allowing request for a result that happen while it is still being computed to also benefit from
  * the cache (which would not be the case with a more naive implementation that only stores the
- * result of the computation upon its completetion).
+ * result of the computation upon its completion).
  * 
  * @author Kris De Volder
  */
 public abstract class SimpleCache<Key, Value> {
+	
+	static Log log = LogFactory.getLog(SimpleCache.class);
+	
 	
 	//TODO: Limit memory footprint or number of entries in the cache
 	
@@ -39,6 +46,11 @@ public abstract class SimpleCache<Key, Value> {
 		this.executor = executor;
 	}
 	
+	/**
+	 * Sets the time after which entries are considered 'expired'. Note that entries will expire 
+	 * relative to their time of creation rather than the time of last use. This to ensure that
+	 * all entries are periodically refreshed.
+	 */
 	public void setTimeToLive(long ttl) {
 		this.timeToLive = ttl;
 	}
@@ -48,15 +60,62 @@ public abstract class SimpleCache<Key, Value> {
 	 * entry was created.
 	 */
 	private class CacheEntry {
-		Future<Value> future;
+		/**
+		 * Future representing value of the cache entry once computed.
+		 */
+		private Future<Value> future;
+		/**
+		 * Future for an old expired value. This can be returned as a 
+		 * 'best we can do' until actual value has been computed.
+		 * This value may be null if there's no oldValue (i.e. we are computing
+		 * something for the first time).
+		 * It will also be set to null once the new value is computed.
+		 */
+		private Future<Value> oldFuture;
+		
 		long timeCreated;
-		public CacheEntry(Callable<Value> task) {
+		
+		public CacheEntry(CacheEntry oldEntry, final Callable<Value> task) {
 			this.timeCreated = System.currentTimeMillis();
-			this.future = executor.submit(task);
+			this.future = executor.submit(new Callable<Value>() {
+				@Override
+				public Value call() throws Exception {
+					try {
+						return task.call();
+					} finally {
+						executor.execute(new Runnable() {
+							@Override
+							public void run() {
+								oldFuture = null;
+							}
+						});
+					}
+				}
+			});
+			if (oldEntry!=null) {
+				oldFuture = oldEntry.future;
+			}
 		}
 		public boolean isExpired() {
 			long age = System.currentTimeMillis()-timeCreated;
 			return age>timeToLive;
+		}
+		public String timeToLiveString() {
+			long age = System.currentTimeMillis()-timeCreated;
+			long timeLeft = timeToLive-age;
+			if (timeLeft>60*1000) {
+				return (timeLeft / 60 / 1000) + " minutes";
+			} else {
+				return timeLeft/1000+ " seconds";
+			}
+		}
+		public Future<Value> getFuture() {
+			if (!future.isDone() && oldFuture!=null) {
+				//When the new value is not ready yet it is better to return the old expired value 
+				// than a "I'm busy" result.
+				return oldFuture;
+			}
+			return future;
 		}
 	}
 	
@@ -69,16 +128,23 @@ public abstract class SimpleCache<Key, Value> {
 	protected abstract Value compute(Key key) throws Exception; 
 	
 	public synchronized Future<Value> get(final Key key) {
+		//TODO: we could do better here. When a cache entry is expired. right now
+		// we will return new entry which has no data yet. It would be nicer to
+		// keep on returning the old data for as long as the new data is not yet ready.
+		
 		CacheEntry entry = contents.get(key);
 		if (entry==null || entry.isExpired()) {
-			entry = new CacheEntry(new Callable<Value>() {
+			log.info("miss: "+key);
+			entry = new CacheEntry(entry, new Callable<Value>() {
 				public Value call() throws Exception {
 					return compute(key);
 				}
 			});
 			contents.put(key, entry);
+		} else {
+			log.info("hit: "+key+ " expires in: "+entry.timeToLiveString());
 		}
-		return entry.future;
+		return entry.getFuture();
 	}
 
 }

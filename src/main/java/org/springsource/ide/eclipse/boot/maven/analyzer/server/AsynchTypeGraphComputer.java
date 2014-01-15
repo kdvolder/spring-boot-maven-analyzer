@@ -15,8 +15,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.stereotype.Component;
 import org.springsource.ide.eclipse.boot.maven.analyzer.BootDependencyAnalyzer;
+import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.SimpleCache;
 
 /**
@@ -29,6 +32,9 @@ import org.springsource.ide.eclipse.boot.maven.analyzer.util.SimpleCache;
 @Component
 public class AsynchTypeGraphComputer {
 
+	static Log log = LogFactory.getLog(AsynchTypeGraphComputer.class);
+	
+
 	/**
 	 * Use single thread executor because it is not safe to run multiple maven operations
 	 * in parallel.
@@ -38,6 +44,7 @@ public class AsynchTypeGraphComputer {
 	private SimpleCache<String, byte[]> cache = new SimpleCache<String, byte[]>(executor) {
 		@Override
 		protected byte[] compute(String springBootVersion) throws Exception {
+			log.info("Computing typegraph: '"+springBootVersion+"'");
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			try {
 				//TODO: do some proper validation of version string
@@ -55,6 +62,11 @@ public class AsynchTypeGraphComputer {
 			}
 		}
 	};
+	
+	public AsynchTypeGraphComputer() {
+		//XXX: remove this only for testing!
+		cache.setTimeToLive(Defaults.cacheTTL);
+	}
 	
 	public Future<byte[]> getTypeGraphResponseBody(final String springBootVersion) {
 		return cache.get(springBootVersion);
