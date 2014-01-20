@@ -12,21 +12,37 @@ package org.springsource.ide.eclipse.boot.maven.analyzer.server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.thymeleaf.templateresolver.ITemplateResolver;
 
 /**
  * Spring Boot Application to serve serve jar-type content assist type graph
  * via a rest end point.
  */
-@ComponentScan
+@ComponentScan({"org.springsource.ide.eclipse.boot.maven.analyzer"})
 @EnableAutoConfiguration
 public class RestServer {
 
     public static void main(String[] args) {
         SpringApplication.run(RestServer.class, args);
     }
+
+    @Bean
+    public TemplateEngine templateEngine() {
+    	return createDefaultTemplateEngine();
+    }
+
+	public static TemplateEngine createDefaultTemplateEngine() {
+		TemplateEngine engine = new TemplateEngine();
+    	ITemplateResolver resolver = new ClassLoaderTemplateResolver();
+		engine.setTemplateResolver(resolver);
+    	return engine;
+	}
     
-//    @Bean
+//    @Bean  
 //    public CacheManager cacheManager() {
 //    	SimpleCacheManager cm = new SimpleCacheManager();
 //    	cm.setCaches(Arrays.asList(

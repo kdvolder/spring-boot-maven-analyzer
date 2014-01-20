@@ -11,7 +11,9 @@
 package org.springsource.ide.eclipse.boot.maven.analyzer.server;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -37,16 +39,17 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
 import org.springsource.ide.eclipse.boot.maven.analyzer.maven.MavenHelper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.IOUtil;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.PomGenerator;
 
 @Controller
 public class RestController {
 
 	static Log log = LogFactory.getLog(RestController.class);
 	
+	@Autowired
+	private PomGenerator pomGenerator;
+	
 	public RestController() {
-//		System.out.println("Creating RestController");
-//		String userHome = System.getProperty("user.home");
-//		System.out.println("user.home="+userHome);
 	}
 	
 	private AsynchTypeGraphComputer computer = null;
@@ -56,44 +59,54 @@ public class RestController {
 		this.computer = computer;
 	}
 	
-//	@RequestMapping(value = "/typegraph/{version}", produces = {"text/xml; charset=UTF-8"})
-//	@ResponseBody
-//	public byte[] getTypeGraph(@PathVariable("version") String springBootVersion) throws Exception {
-////		return "<hello></hello>".getBytes();
-//		return computeTypeGraph(springBootVersion);
-//	}
-	
-	@RequestMapping(value = "/typegraph/{version}", produces = {"text/xml; charset=UTF-8"})
+	@RequestMapping(value = "/typegraph/{version:.*}", produces = {"text/xml; charset=UTF-8"})
 	public void getTypeGraphMaybe(
 			@PathVariable("version") String springBootVersion,
 			HttpServletResponse resp
-		) throws Exception {
-			log.info("type graph request received");
-			Future<byte[]> result = computer.getTypeGraphResponseBody(springBootVersion);
-			if (!result.isDone()) {
-				//Return something quickly to let client know we are working on their request but
-				// it may be a while.
-				resp.setStatus(HttpServletResponse.SC_ACCEPTED);
-				resp.setContentType("text/plain");
-				resp.setCharacterEncoding("utf8");
-				resp.getWriter().println("I'm working on it... ask me again later");
-			} else {
-				//Done: could be a actual result or an error
-				try {
-					byte[] resultData = result.get(); //this will throw in case of an error in processing.
-					resp.setStatus(HttpServletResponse.SC_OK);
-					resp.setContentType("text/xml");
-					resp.setCharacterEncoding("utf8");
-					resp.getOutputStream().write(resultData);
-				} catch (Exception e) {
-					resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					resp.setContentType("text/plain");
-					resp.setCharacterEncoding("utf8");
-					e.printStackTrace(new PrintStream(resp.getOutputStream(), true, "utf8"));
-				}
-			}
+			) throws Exception {
+		log.info("type graph request received for '"+springBootVersion+"'");
+		Future<byte[]> result = computer.getTypeGraphResponseBody(springBootVersion);
+		sendResponse(resp, result);
 	}
 	
+	@RequestMapping(value = "/typegraph", produces = {"text/xml; charset=UTF-8"})
+	public void getTypeGraphMaybe(HttpServletResponse resp) throws Exception {
+		log.info("type graph request received NO VERSION");
+		Future<byte[]> result = computer.getTypeGraphResponseBody(Defaults.defaultVersion);
+		sendResponse(resp, result);
+	}
+
+	/**
+	 * Helper method to send a 'Future' as a response to the client. 
+	 * If the future is 'done' actual content (or error) is sent. Otherwise
+	 * a 'try later' result is sent instead.
+	 */
+	private void sendResponse(HttpServletResponse resp, Future<byte[]> result)
+			throws IOException, UnsupportedEncodingException {
+		if (!result.isDone()) {
+			//Return something quickly to let client know we are working on their request but
+			// it may be a while.
+			resp.setStatus(HttpServletResponse.SC_ACCEPTED);
+			resp.setContentType("text/plain");
+			resp.setCharacterEncoding("utf8");
+			resp.getWriter().println("I'm working on it... ask me again later");
+		} else {
+			//Done: could be a actual result or an error
+			try {
+				byte[] resultData = result.get(); //this will throw in case of an error in processing.
+				resp.setStatus(HttpServletResponse.SC_OK);
+				resp.setContentType("text/xml");
+				resp.setCharacterEncoding("utf8");
+				resp.getOutputStream().write(resultData);
+			} catch (Exception e) {
+				resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				resp.setContentType("text/plain");
+				resp.setCharacterEncoding("utf8");
+				e.printStackTrace(new PrintStream(resp.getOutputStream(), true, "utf8"));
+			}
+		}
+	}
+
 	@RequestMapping(value="/ulimit/{opt}", produces = {"text/plain; charset=UTF-8"})
 	@ResponseBody
 	public String ulimitDashOpt(@PathVariable("opt") String opt) throws Exception {
@@ -136,13 +149,25 @@ public class RestController {
 //        System.out.println( artifact + " resolved to  " + artifact.getFile() );
 	}
 
-	@RequestMapping(value="/maven/depMan", produces = {"application/json; charste=UTF-8"})
+	@RequestMapping(value="/maven/depMan", produces = {"application/json; charset=UTF-8"})
 	@ResponseBody
 	public List<JsonDependency> getManagedDependencies() throws Exception {
 		MavenHelper mvn = new MavenHelper();
-		MavenProject mvnProject = mvn.readMavenProject(Defaults.pomFile());
+		String bootVersion = Defaults.defaultVersion;
+		MavenProject mvnProject = mvn.readMavenProject(pomGenerator.getPomFile(bootVersion));
 		
 		return JsonDependency.from(mvnProject.getDependencyManagement().getDependencies());
 	}
 
+	/**
+	 * Not really an 'end user' rest end point. But can be useful during debugging to
+	 * see if pomGenerator returns what we'd expect.
+	 */
+	@RequestMapping(value="/pom/{version:.*}", produces = {"text/xml; charset=UTF-8"})
+	@ResponseBody
+	public String genPom(@PathVariable("version") String bootVersion) throws Exception {
+		//TemplateEngine engine = pomGenerator.getEngine();
+		return pomGenerator.getPom(bootVersion);
+	}
+	
 }

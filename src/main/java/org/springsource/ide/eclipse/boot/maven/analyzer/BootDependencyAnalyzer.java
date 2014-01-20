@@ -21,13 +21,14 @@ import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.PlexusContainerException;
 import org.eclipse.aether.graph.DependencyNode;
-import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.DirectedGraph;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.GraphBuildingDependencyVisitor;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.TypeDependencyGraphXmlWriter;
 import org.springsource.ide.eclipse.boot.maven.analyzer.maven.DependencyCollector;
 import org.springsource.ide.eclipse.boot.maven.analyzer.maven.MavenHelper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Outputter;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.PomGenerator;
 
 
 /**
@@ -66,7 +67,9 @@ public class BootDependencyAnalyzer {
 	}
 
 	private MavenHelper maven;
-	private File pomFile = Defaults.pomFile();
+	
+	@Autowired
+	private PomGenerator pomGenerator;
 	
 	private boolean useSpringProvidesInfo = false;
 	private SpringProvidesInfo providesInfo = null;
@@ -76,15 +79,11 @@ public class BootDependencyAnalyzer {
 	 * If not explicitly set the result is printed to System.out
 	 */
 	private Outputter xmlOutput = null;
+
+	private File pomFile;
 	
 	public File getPomFile() {
-		if (pomFile==null) {
-			pomFile = Defaults.pomFile();
-		}
 		return pomFile;
-	}
-	public void setPomFile(String path) {
-		this.pomFile = new File(path);
 	}
 	public void setPomFile(File path) {
 		this.pomFile = path;

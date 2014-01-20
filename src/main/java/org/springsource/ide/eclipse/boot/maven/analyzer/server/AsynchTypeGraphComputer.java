@@ -17,9 +17,11 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springsource.ide.eclipse.boot.maven.analyzer.BootDependencyAnalyzer;
 import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.PomGenerator;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.SimpleCache;
 
 /**
@@ -33,13 +35,15 @@ import org.springsource.ide.eclipse.boot.maven.analyzer.util.SimpleCache;
 public class AsynchTypeGraphComputer {
 
 	static Log log = LogFactory.getLog(AsynchTypeGraphComputer.class);
-	
 
 	/**
 	 * Use single thread executor because it is not safe to run multiple maven operations
 	 * in parallel.
 	 */
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
+	
+	@Autowired
+	private PomGenerator pomGenerator;
 
 	private SimpleCache<String, byte[]> cache = new SimpleCache<String, byte[]>(executor) {
 		@Override
@@ -48,11 +52,12 @@ public class AsynchTypeGraphComputer {
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			try {
 				//TODO: do some proper validation of version string
-				if (springBootVersion.contains("XXX")) {
-					throw new Exception("Bad version: "+springBootVersion);
-				}
+//				if (springBootVersion.contains("XXX")) {
+//					throw new Exception("Bad version: "+springBootVersion);
+//				}
 				BootDependencyAnalyzer analyzer = new BootDependencyAnalyzer();
 				analyzer.setXmlOut(out);
+				analyzer.setPomFile(pomGenerator.getPomFile(springBootVersion));
 				analyzer.setUseSpringProvidesInfo(true); 
 				analyzer.run();
 				return out.toByteArray();

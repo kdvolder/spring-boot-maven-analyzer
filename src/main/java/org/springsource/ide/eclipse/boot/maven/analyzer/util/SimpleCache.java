@@ -18,7 +18,6 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springsource.ide.eclipse.boot.maven.analyzer.server.AsynchTypeGraphComputer;
 
 /**
  * Simple cache implementation that stores the result of some computations for a limited amount of time
@@ -113,6 +112,7 @@ public abstract class SimpleCache<Key, Value> {
 			if (!future.isDone() && oldFuture!=null) {
 				//When the new value is not ready yet it is better to return the old expired value 
 				// than a "I'm busy" result.
+				log.info("returning expired data");
 				return oldFuture;
 			}
 			return future;
