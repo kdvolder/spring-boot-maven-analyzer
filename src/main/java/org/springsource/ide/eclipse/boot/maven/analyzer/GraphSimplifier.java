@@ -285,7 +285,13 @@ public class GraphSimplifier {
 			Collection<Object> validProviders = graph.getAncestors(node);
 			//It is not safe to mutate the preferedProviders collection directly (it is 'owned' by the providesInfo object).
 			preferedProviders = new ArrayList<Artifact>(preferedProviders);
-			preferedProviders.retainAll(validProviders);
+			if (!preferedProviders.isEmpty()) {
+				preferedProviders.retainAll(validProviders);
+				if (preferedProviders.isEmpty()) {
+					warn("INVALID   prefered providers: "+providesInfo.getPreferedProviders(node.getArtifactId()));
+					warn("   not ancestor for artifact: "+node.getArtifactId());
+				}
+			}
 		}
 		if (!preferedProviders.isEmpty()) {
 			if (preferedProviders.size()>1) {
