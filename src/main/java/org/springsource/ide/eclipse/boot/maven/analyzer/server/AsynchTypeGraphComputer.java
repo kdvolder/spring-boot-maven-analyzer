@@ -17,11 +17,9 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springsource.ide.eclipse.boot.maven.analyzer.BootDependencyAnalyzer;
 import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
-import org.springsource.ide.eclipse.boot.maven.analyzer.util.PomGenerator;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.SimpleCache;
 
 /**
@@ -42,9 +40,6 @@ public class AsynchTypeGraphComputer {
 	 */
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	
-	@Autowired
-	private PomGenerator pomGenerator;
-
 	private SimpleCache<String, byte[]> cache = new SimpleCache<String, byte[]>(executor) {
 		@Override
 		protected byte[] compute(String springBootVersion) throws Exception {
@@ -57,7 +52,7 @@ public class AsynchTypeGraphComputer {
 //				}
 				BootDependencyAnalyzer analyzer = new BootDependencyAnalyzer();
 				analyzer.setXmlOut(out);
-				analyzer.setPomFile(pomGenerator.getPomFile(springBootVersion));
+				analyzer.setBootVersion(springBootVersion);
 				analyzer.setUseSpringProvidesInfo(true); 
 				analyzer.run();
 				return out.toByteArray();

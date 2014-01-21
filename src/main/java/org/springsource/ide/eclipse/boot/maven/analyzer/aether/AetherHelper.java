@@ -41,7 +41,7 @@ import org.eclipse.aether.util.graph.transformer.ConflictResolver;
  * is probably more due to the fact that its difficult to use and things most likely didn't get wired together
  * properly because of my own misunderstandings rather than the actual quality of maven).
  * 
- * However, aether seems to do exactly what we need and has somewhat clearer documentation on how
+ * However, aether seems to do exactly what we need and has much clearer documentation on how
  * to setup and use properly).
  * 
  * See: http://eclipse.org/aether/documentation/

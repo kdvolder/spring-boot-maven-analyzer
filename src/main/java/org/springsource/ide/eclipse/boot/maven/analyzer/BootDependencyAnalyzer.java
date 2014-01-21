@@ -20,15 +20,10 @@ import org.codehaus.plexus.PlexusContainerException;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.graph.DependencyNode;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springsource.ide.eclipse.boot.maven.analyzer.aether.AetherHelper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.DirectedGraph;
-import org.springsource.ide.eclipse.boot.maven.analyzer.graph.GraphBuildingDependencyVisitor;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.TypeDependencyGraphXmlWriter;
-import org.springsource.ide.eclipse.boot.maven.analyzer.maven.DependencyCollector;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Outputter;
-import org.springsource.ide.eclipse.boot.maven.analyzer.util.PomGenerator;
 
 
 /**
@@ -68,9 +63,7 @@ public class BootDependencyAnalyzer {
 
 	private AetherHelper aether;
 	
-	@Autowired
-	private PomGenerator pomGenerator;
-	
+	private String bootVersion;
 	private boolean useSpringProvidesInfo = false;
 	private SpringProvidesInfo providesInfo = null;
 	
@@ -81,6 +74,7 @@ public class BootDependencyAnalyzer {
 	private Outputter xmlOutput = null;
 
 	private File pomFile;
+
 	
 	public File getPomFile() {
 		return pomFile;
@@ -160,6 +154,10 @@ public class BootDependencyAnalyzer {
 
 	public void setXmlOut(OutputStream out) {
 		setXmlOutputter(Outputter.toStream(out));
+	}
+
+	public void setBootVersion(String bootVersion) {
+		this.bootVersion = bootVersion;
 	}
 
 }

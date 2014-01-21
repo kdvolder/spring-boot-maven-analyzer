@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer.server;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -39,18 +38,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springsource.ide.eclipse.boot.maven.analyzer.aether.AetherHelper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
-import org.springsource.ide.eclipse.boot.maven.analyzer.util.IOUtil;
-import org.springsource.ide.eclipse.boot.maven.analyzer.util.PomGenerator;
 
 @Controller
-public class RestController {
+public class AetherialController {
 
-	static Log log = LogFactory.getLog(RestController.class);
+	static Log log = LogFactory.getLog(AetherialController.class);
 	
-	@Autowired
-	private PomGenerator pomGenerator;
-	
-	public RestController() {
+	public AetherialController() {
 	}
 	
 	private AsynchTypeGraphComputer computer = null;
@@ -108,18 +102,18 @@ public class RestController {
 		}
 	}
 
-	@RequestMapping(value="/ulimit/{opt}", produces = {"text/plain; charset=UTF-8"})
-	@ResponseBody
-	public String ulimitDashOpt(@PathVariable("opt") String opt) throws Exception {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		Process process = Runtime.getRuntime().exec(new String[] {
-			"bash", "-c", "ulimit -"+opt	
-		});
-		process.waitFor();
-		IOUtil.pipe(process.getInputStream(), out);
-		IOUtil.pipe(process.getErrorStream(), out);
-		return out.toString("UTF-8");
-	}
+//	@RequestMapping(value="/ulimit/{opt}", produces = {"text/plain; charset=UTF-8"})
+//	@ResponseBody
+//	public String ulimitDashOpt(@PathVariable("opt") String opt) throws Exception {
+//		ByteArrayOutputStream out = new ByteArrayOutputStream();
+//		Process process = Runtime.getRuntime().exec(new String[] {
+//			"bash", "-c", "ulimit -"+opt	
+//		});
+//		process.waitFor();
+//		IOUtil.pipe(process.getInputStream(), out);
+//		IOUtil.pipe(process.getErrorStream(), out);
+//		return out.toString("UTF-8");
+//	}
 	
 	@RequestMapping(value="/maven/artifact/{group}/{arti}/{version}")
 	public void getArtifact(
@@ -172,15 +166,15 @@ public class RestController {
 		return JsonDependency.from(managedDeps);
 	}
 
-	/**
-	 * Not really an 'end user' rest end point. But can be useful during debugging to
-	 * see if pomGenerator returns what we'd expect.
-	 */
-	@RequestMapping(value="/pom/{version:.*}", produces = {"text/xml; charset=UTF-8"})
-	@ResponseBody
-	public String genPom(@PathVariable("version") String bootVersion) throws Exception {
-		//TemplateEngine engine = pomGenerator.getEngine();
-		return pomGenerator.getPom(bootVersion);
-	}
+//	/**
+//	 * Not really an 'end user' rest end point. But can be useful during debugging to
+//	 * see if pomGenerator returns what we'd expect.
+//	 */
+//	@RequestMapping(value="/pom/{version:.*}", produces = {"text/xml; charset=UTF-8"})
+//	@ResponseBody
+//	public String genPom(@PathVariable("version") String bootVersion) throws Exception {
+//		//TemplateEngine engine = pomGenerator.getEngine();
+//		return pomGenerator.getPom(bootVersion);
+//	}
 	
 }
