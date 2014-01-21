@@ -3,7 +3,7 @@ package org.springsource.ide.eclipse.boot.maven.analyzer.util;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
-import org.springsource.ide.eclipse.boot.maven.analyzer.server.RestServer;
+import org.springsource.ide.eclipse.boot.maven.analyzer.server.MavenAnalyzerServer;
 
 import junit.framework.TestCase;
 
@@ -13,7 +13,7 @@ public class PomGeneratorTest extends TestCase {
 	private PomGenerator gen = new PomGenerator();
 	
 	public PomGeneratorTest() {
-		gen.setEngine(RestServer.createDefaultTemplateEngine());
+		gen.setEngine(MavenAnalyzerServer.createDefaultTemplateEngine());
 	}
 	
 	public void testVersionSubstitution() throws Exception {

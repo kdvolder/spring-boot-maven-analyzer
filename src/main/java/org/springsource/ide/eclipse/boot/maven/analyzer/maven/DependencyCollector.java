@@ -13,16 +13,9 @@ package org.springsource.ide.eclipse.boot.maven.analyzer.maven;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.maven.RepositoryUtils;
-import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.model.Dependency;
-import org.apache.maven.model.DependencyManagement;
-import org.apache.maven.project.MavenProject;
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.artifact.ArtifactTypeRegistry;
-import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.graph.DependencyNode;
-import org.eclipse.aether.resolution.DependencyRequest;
+import org.springsource.ide.eclipse.boot.maven.analyzer.aether.AetherHelper;
 
 /**
  * Provides methods build up a request to collect dependencies and eventually retrieve the result.
@@ -32,8 +25,7 @@ import org.eclipse.aether.resolution.DependencyRequest;
  */
 public class DependencyCollector {
 
-	private MavenProject mavenProject;
-	private MavenHelper maven;
+	private AetherHelper maven;
 
 	/**
 	 * Collect roots that form the basis of this request. Will be nulled once the
@@ -41,9 +33,8 @@ public class DependencyCollector {
 	 */
 	private List<Dependency> roots = new ArrayList<Dependency>();
 
-	public DependencyCollector(MavenHelper maven, MavenProject context) {
+	public DependencyCollector(AetherHelper maven) {
 		this.maven = maven;
-		this.mavenProject = context;
 	}
 
 	/**
@@ -55,54 +46,54 @@ public class DependencyCollector {
 	}
 
 	private synchronized DependencyNode readDependencyTree(boolean resolve) throws Exception {
-		//code in here based on org.eclipse.m2e.core.embedder.MavenModelManager.readDependencyTree(RepositorySystemSession, MavenProject, String)
-
-		MavenExecutionRequest executionRequest = maven.createExecutionRequest();
-		DefaultRepositorySystemSession session = maven.createRepositorySession(executionRequest);
-
-//	    DependencyGraphTransformer transformer = new ChainedDependencyGraphTransformer(
-//	    		new JavaEffectiveScopeCalculator()
-//	            new NearestVersionConflictResolver() 
-	    			//Watch out the nearest NearestVersionConflictResolver from maven 'aether' package.
-	    			//destroys the graph's structure (it resolves conflicts by deleting nodes from the graph).
-	    			//Although all artfifacts we care about are still in the graph, deleting nodes
-	    			//removes also the corresponding 'dependsOn' links which we also care about.
-	    			//TODO: implement an alternative
-//	    );
-//	    session.setDependencyGraphTransformer(transformer);
-
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
-		try {
-			Thread.currentThread().setContextClassLoader(maven.getProjectRealm(mavenProject));
-
-			ArtifactTypeRegistry stereotypes = session.getArtifactTypeRegistry();
-
-			CollectRequest request = new CollectRequest();
-			request.setRequestContext("project"); //$NON-NLS-1$
-			request.setRepositories(mavenProject.getRemoteProjectRepositories());
-
-			for(org.apache.maven.model.Dependency dependency : roots) {
-				request.addDependency(RepositoryUtils.toDependency(dependency, stereotypes));
-			}
-
-			DependencyManagement depMngt = mavenProject.getDependencyManagement();
-			if(depMngt != null) {
-				for(org.apache.maven.model.Dependency dependency : depMngt.getDependencies()) {
-					request.addManagedDependency(RepositoryUtils.toDependency(dependency, stereotypes));
-				}
-			}
-			DependencyNode node;
-			if (!resolve) {
-				node = maven.getRepositorySystem().collectDependencies(session, request).getRoot();
-			} else {
-				node = maven.getRepositorySystem().resolveDependencies(session, new DependencyRequest(request, null)).getRoot();
-			}
-
-			return node;
-		} finally {
-			Thread.currentThread().setContextClassLoader(oldClassLoader);
-		}
-
+//		//code in here based on org.eclipse.m2e.core.embedder.MavenModelManager.readDependencyTree(RepositorySystemSession, MavenProject, String)
+//
+//		MavenExecutionRequest executionRequest = maven.createExecutionRequest();
+//		DefaultRepositorySystemSession session = maven.createRepositorySession(executionRequest);
+//
+////	    DependencyGraphTransformer transformer = new ChainedDependencyGraphTransformer(
+////	    		new JavaEffectiveScopeCalculator()
+////	            new NearestVersionConflictResolver() 
+//	    			//Watch out the nearest NearestVersionConflictResolver from maven 'aether' package.
+//	    			//destroys the graph's structure (it resolves conflicts by deleting nodes from the graph).
+//	    			//Although all artfifacts we care about are still in the graph, deleting nodes
+//	    			//removes also the corresponding 'dependsOn' links which we also care about.
+//	    			//TODO: implement an alternative
+////	    );
+////	    session.setDependencyGraphTransformer(transformer);
+//
+//		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+//		try {
+//			Thread.currentThread().setContextClassLoader(maven.getProjectRealm(mavenProject));
+//
+//			ArtifactTypeRegistry stereotypes = session.getArtifactTypeRegistry();
+//
+//			CollectRequest request = new CollectRequest();
+//			request.setRequestContext("project"); //$NON-NLS-1$
+//			request.setRepositories(mavenProject.getRemoteProjectRepositories());
+//
+//			for(org.apache.maven.model.Dependency dependency : roots) {
+//				request.addDependency(RepositoryUtils.toDependency(dependency, stereotypes));
+//			}
+//
+//			DependencyManagement depMngt = mavenProject.getDependencyManagement();
+//			if(depMngt != null) {
+//				for(org.apache.maven.model.Dependency dependency : depMngt.getDependencies()) {
+//					request.addManagedDependency(RepositoryUtils.toDependency(dependency, stereotypes));
+//				}
+//			}
+//			DependencyNode node;
+//			if (!resolve) {
+//				node = maven.getRepositorySystem().collectDependencies(session, request).getRoot();
+//			} else {
+//				node = maven.getRepositorySystem().resolveDependencies(session, new DependencyRequest(request, null)).getRoot();
+//			}
+//
+//			return node;
+//		} finally {
+//			Thread.currentThread().setContextClassLoader(oldClassLoader);
+//		}
+		return null;
 	}
 
 	public DependencyNode readDependencyTree() throws Exception {

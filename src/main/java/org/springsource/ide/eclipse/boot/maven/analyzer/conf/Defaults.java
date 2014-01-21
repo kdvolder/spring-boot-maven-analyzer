@@ -3,6 +3,9 @@ package org.springsource.ide.eclipse.boot.maven.analyzer.conf;
 import java.io.File;
 import java.net.URISyntaxException;
 
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+
 public class Defaults {
 
 	//Timeunit constants expressed in millis
@@ -25,6 +28,17 @@ public class Defaults {
 	 * resolution overly often.
 	 */
 	public static long cacheTTL = 1 * DAY;
+	
+	/**
+	 * Spring boot parent pom artifact. This will be used to determine managed 
+	 * dependencies for spring boot projects.
+	 */
+	public static Artifact parentPom(String bootVersion) {
+		return new DefaultArtifact("org.springframework.boot", "spring-boot-starter-parent", "jar", bootVersion);
+	}
+
+	public static Artifact defaultParentPom = parentPom(defaultVersion);
+	
 
 //	/**
 //	 * Default pom file to analyze.

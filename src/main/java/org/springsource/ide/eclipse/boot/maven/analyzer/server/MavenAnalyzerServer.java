@@ -24,10 +24,10 @@ import org.thymeleaf.templateresolver.ITemplateResolver;
  */
 @ComponentScan({"org.springsource.ide.eclipse.boot.maven.analyzer"})
 @EnableAutoConfiguration
-public class RestServer {
+public class MavenAnalyzerServer {
 
     public static void main(String[] args) {
-        SpringApplication.run(RestServer.class, args);
+        SpringApplication.run(MavenAnalyzerServer.class, args);
     }
 
     @Bean

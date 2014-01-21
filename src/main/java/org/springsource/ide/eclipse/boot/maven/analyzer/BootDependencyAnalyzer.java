@@ -16,17 +16,17 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.maven.model.Dependency;
-import org.apache.maven.model.DependencyManagement;
-import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.PlexusContainerException;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyNode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springsource.ide.eclipse.boot.maven.analyzer.aether.AetherHelper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.DirectedGraph;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.GraphBuildingDependencyVisitor;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.TypeDependencyGraphXmlWriter;
 import org.springsource.ide.eclipse.boot.maven.analyzer.maven.DependencyCollector;
-import org.springsource.ide.eclipse.boot.maven.analyzer.maven.MavenHelper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Outputter;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.PomGenerator;
 
@@ -66,7 +66,7 @@ public class BootDependencyAnalyzer {
 		xmlOutput = outFile;
 	}
 
-	private MavenHelper maven;
+	private AetherHelper aether;
 	
 	@Autowired
 	private PomGenerator pomGenerator;
@@ -104,47 +104,47 @@ public class BootDependencyAnalyzer {
 
 	public BootDependencyAnalyzer() throws PlexusContainerException {
 		//TODO: dependency injection of some sort needed here? (configure various maven options).
-		maven = new MavenHelper();
+		aether = new AetherHelper();
 	}
 
 	public void run() throws Exception {
-		File pomFile = getPomFile();
-		MavenProject project = maven.readMavenProject(pomFile);
+		Artifact parentPom = new DefaultArtifact("spring-boot", "spring-boot-parent", "pom", "0.5.0.BUILD-SNAPSHOT");
+		List<Dependency> depMan = aether.getManagedDependencies(parentPom);
 		
-		DependencyCollector dependencies = new DependencyCollector(maven, project);
+//		DependencyCollector dependencies = new DependencyCollector(aether);
 		
-		DependencyManagement depMan = project.getDependencyManagement();
-		if (depMan!=null) {
-			List<Dependency> deps = depMan.getDependencies();
-			if (deps!=null) {
-				for (Dependency d : deps) {
-					dependencies.addRoot(d);
-				}
-			}
-		}
-		
-		DependencyNode tree = dependencies.resolveDependencyTree();
-		
-		//Step 1 collect the infos from 'spring.provides' properties file so they can be used in the next stage.
-		if (useSpringProvidesInfo) {
-			SpringProvidesDependencyVisitor springProvidesCollector = new SpringProvidesDependencyVisitor();
-			tree.accept(springProvidesCollector);
-			providesInfo = springProvidesCollector.getInfo();
-		}
-		
-		
-		//Step 2 build a copy of our types + dependencies graph.
-		GraphBuildingDependencyVisitor graphBuilder = new GraphBuildingDependencyVisitor();
-		tree.accept(graphBuilder);
-		DirectedGraph graph = graphBuilder.getGraph();
-		
-		//Step 3 massage the graph to disambiguate type suggestions based on springprovides infos.
-		if (useSpringProvidesInfo) {
-			GraphSimplifier.simplify(graph, providesInfo);
-		}
-		
-		//Step 4: save massaged graph to designated output stream.
-		saveAsXML(graph);
+//		DependencyManagement depMan = project.getDependencyManagement();
+//		if (depMan!=null) {
+//			List<Dependency> deps = depMan.getDependencies();
+//			if (deps!=null) {
+//				for (Dependency d : depMan) {
+//					dependencies.addRoot(d);
+//				}
+//			}
+//		}
+//		
+//		DependencyNode tree = dependencies.resolveDependencyTree();
+//		
+//		//Step 1 collect the infos from 'spring.provides' properties file so they can be used in the next stage.
+//		if (useSpringProvidesInfo) {
+//			SpringProvidesDependencyVisitor springProvidesCollector = new SpringProvidesDependencyVisitor();
+//			tree.accept(springProvidesCollector);
+//			providesInfo = springProvidesCollector.getInfo();
+//		}
+//		
+//		
+//		//Step 2 build a copy of our types + dependencies graph.
+//		GraphBuildingDependencyVisitor graphBuilder = new GraphBuildingDependencyVisitor();
+//		tree.accept(graphBuilder);
+//		DirectedGraph graph = graphBuilder.getGraph();
+//		
+//		//Step 3 massage the graph to disambiguate type suggestions based on springprovides infos.
+//		if (useSpringProvidesInfo) {
+//			GraphSimplifier.simplify(graph, providesInfo);
+//		}
+//		
+//		//Step 4: save massaged graph to designated output stream.
+//		saveAsXML(graph);
 		
 	}
 

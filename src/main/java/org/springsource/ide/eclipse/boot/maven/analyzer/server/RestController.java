@@ -22,7 +22,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.graph.Dependency;
 //import org.eclipse.aether.RepositorySystem;
 //import org.eclipse.aether.RepositorySystemSession;
 //import org.eclipse.aether.artifact.Artifact;
@@ -36,8 +37,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springsource.ide.eclipse.boot.maven.analyzer.aether.AetherHelper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
-import org.springsource.ide.eclipse.boot.maven.analyzer.maven.MavenHelper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.IOUtil;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.PomGenerator;
 
@@ -152,11 +153,23 @@ public class RestController {
 	@RequestMapping(value="/maven/depMan", produces = {"application/json; charset=UTF-8"})
 	@ResponseBody
 	public List<JsonDependency> getManagedDependencies() throws Exception {
-		MavenHelper mvn = new MavenHelper();
+		AetherHelper aether = new AetherHelper();
 		String bootVersion = Defaults.defaultVersion;
-		MavenProject mvnProject = mvn.readMavenProject(pomGenerator.getPomFile(bootVersion));
 		
-		return JsonDependency.from(mvnProject.getDependencyManagement().getDependencies());
+		Artifact parentPom = Defaults.parentPom(bootVersion);
+		List<Dependency> managedDeps = aether.getManagedDependencies(parentPom);
+		System.out.println("==== managed deps ====");
+		for (Dependency d : managedDeps) {
+			//System.out.println(d);
+			Artifact a = d.getArtifact();
+			if (a!=null) {
+				if (a.getExtension().equals("jar")) {
+					System.out.println(a.getGroupId()+":"+a.getArtifactId()+":"+a.getVersion());
+				}
+			}
+		}
+		System.out.println("==== managed deps ====");
+		return JsonDependency.from(managedDeps);
 	}
 
 	/**

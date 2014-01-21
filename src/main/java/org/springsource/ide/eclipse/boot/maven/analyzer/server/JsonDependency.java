@@ -3,7 +3,8 @@ package org.springsource.ide.eclipse.boot.maven.analyzer.server;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.maven.model.Dependency;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.graph.Dependency;
 
 /**
  * Contains more or less same info as {@link Dependency} but in a form where jackson mapper will
@@ -21,17 +22,18 @@ public class JsonDependency {
 	private String scope;
 
 	public JsonDependency(Dependency d) {
-		this.group = d.getGroupId();
-		this.artifact = d.getArtifactId();
-		this.version = d.getVersion();
-		this.type = d.getType();
-		this.classifier = d.getClassifier();
+		Artifact a = d.getArtifact();
+		this.group = a.getGroupId();
+		this.artifact = a.getArtifactId();
+		this.version = a.getVersion();
+		this.type = a.getExtension();
+		this.classifier = a.getClassifier();
 		this.scope = d.getScope();
 	}
 
-	public static List<JsonDependency> from(List<Dependency> dependencies) {
-		ArrayList<JsonDependency> result = new ArrayList<>(dependencies.size());
-		for (Dependency d : dependencies) {
+	public static List<JsonDependency> from(List<Dependency> managedDeps) {
+		ArrayList<JsonDependency> result = new ArrayList<>(managedDeps.size());
+		for (Dependency d : managedDeps) {
 			result.add(JsonDependency.from(d));
 		}
 		return result;
