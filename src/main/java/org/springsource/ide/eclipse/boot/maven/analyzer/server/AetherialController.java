@@ -1,16 +1,17 @@
 /*******************************************************************************
- * Copyright (c) 2013 GoPivotal, Inc.
+ * Copyright (c) 2014 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     GoPivotal, Inc. - initial API and implementation
+ *     Pivotal Software, Inc. - initial API and implementation
  *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer.server;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
@@ -22,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.CollectResult;
 import org.eclipse.aether.graph.Dependency;
 //import org.eclipse.aether.RepositorySystem;
 //import org.eclipse.aether.RepositorySystemSession;
@@ -37,6 +39,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springsource.ide.eclipse.boot.maven.analyzer.aether.AetherHelper;
+import org.springsource.ide.eclipse.boot.maven.analyzer.aether.ConsoleDependencyGraphDumper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
 
 @Controller
@@ -49,12 +52,20 @@ public class AetherialController {
 	
 	private AsynchTypeGraphComputer computer = null;
 	
+	private AetherHelper aether;
+
 	@Autowired(required=true)
 	public void setAsynchTypeGraphComputer(AsynchTypeGraphComputer computer) {
 		this.computer = computer;
 	}
 	
-	@RequestMapping(value = "/typegraph/{version:.*}", produces = {"text/xml; charset=UTF-8"})
+	@Autowired(required=true)
+	public void setAetherHelper(AetherHelper aether) {
+		this.aether = aether;
+	}
+	
+	
+	@RequestMapping(value = "/boot/typegraph/{version:.*}", produces = {"text/xml; charset=UTF-8"})
 	public void getTypeGraphMaybe(
 			@PathVariable("version") String springBootVersion,
 			HttpServletResponse resp
@@ -64,7 +75,7 @@ public class AetherialController {
 		sendResponse(resp, result);
 	}
 	
-	@RequestMapping(value = "/typegraph", produces = {"text/xml; charset=UTF-8"})
+	@RequestMapping(value = "/boot/typegraph", produces = {"text/xml; charset=UTF-8"})
 	public void getTypeGraphMaybe(HttpServletResponse resp) throws Exception {
 		log.info("type graph request received NO VERSION");
 		Future<byte[]> result = computer.getTypeGraphResponseBody(Defaults.defaultVersion);
@@ -144,12 +155,17 @@ public class AetherialController {
 //        System.out.println( artifact + " resolved to  " + artifact.getFile() );
 	}
 
-	@RequestMapping(value="/maven/depMan", produces = {"application/json; charset=UTF-8"})
+	@RequestMapping(value="/boot/mdeps", produces = {"application/json; charset=UTF-8"})
 	@ResponseBody
 	public List<JsonDependency> getManagedDependencies() throws Exception {
-		AetherHelper aether = new AetherHelper();
 		String bootVersion = Defaults.defaultVersion;
-		
+		return getManagedDependencies(bootVersion);
+	}
+
+	@RequestMapping(value="/boot/mdeps/{version:.*}", produces = {"application/json; charset=UTF-8"})
+	@ResponseBody
+	private List<JsonDependency> getManagedDependencies(String bootVersion)
+			throws Exception {
 		Artifact parentPom = Defaults.parentPom(bootVersion);
 		List<Dependency> managedDeps = aether.getManagedDependencies(parentPom);
 		System.out.println("==== managed deps ====");
@@ -166,15 +182,24 @@ public class AetherialController {
 		return JsonDependency.from(managedDeps);
 	}
 
-//	/**
-//	 * Not really an 'end user' rest end point. But can be useful during debugging to
-//	 * see if pomGenerator returns what we'd expect.
-//	 */
-//	@RequestMapping(value="/pom/{version:.*}", produces = {"text/xml; charset=UTF-8"})
-//	@ResponseBody
-//	public String genPom(@PathVariable("version") String bootVersion) throws Exception {
-//		//TemplateEngine engine = pomGenerator.getEngine();
-//		return pomGenerator.getPom(bootVersion);
-//	}
+	@RequestMapping(value="/boot/mdgraph"/*, produces = {"text/plain; charset=UTF-8"}*/)
+	public void getManagedDependencyGraph(HttpServletResponse resp) throws Exception {
+		getManagedDependencyGraph(Defaults.defaultVersion, resp);
+	}
+	
+	@RequestMapping(value="/boot/mdgraph/{version:.*}"/*, produces = {"text/plain; charset=UTF-8"}*/)
+	public void getManagedDependencyGraph(@PathVariable("version")String bootVersion, HttpServletResponse resp) throws Exception {
+		Artifact parentPom = Defaults.parentPom(bootVersion);
+		CollectResult dgraphResult = aether.getManagedDependencyGraph(parentPom);
+		
+		resp.setCharacterEncoding("UTF-8");
+		resp.setContentType("text/plain");
+		OutputStream out = resp.getOutputStream();
+		PrintStream pout = new PrintStream(out, true, "UTF-8");
+		
+		
+		ConsoleDependencyGraphDumper dgraphDumper = new ConsoleDependencyGraphDumper(pout);
+		dgraphResult.getRoot().accept(dgraphDumper);
+	}
 	
 }

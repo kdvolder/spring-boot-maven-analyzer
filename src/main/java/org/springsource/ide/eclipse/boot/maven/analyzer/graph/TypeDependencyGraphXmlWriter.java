@@ -1,12 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2013 GoPivotal, Inc.
+ * Copyright (c) 2013, 2014 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     GoPivotal, Inc. - initial API and implementation
+ *     Pivotal Software, Inc. - initial API and implementation
  *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer.graph;
 
@@ -18,7 +18,6 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.eclipse.aether.artifact.Artifact;
 import org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery.ExternalType;
 
 /**
@@ -33,7 +32,7 @@ public class TypeDependencyGraphXmlWriter {
 	
 	private int level = 0; //for indentation of the output. More readable.
 	
-	private HashSet<Artifact> seenArtifacts = new HashSet<Artifact>(); //so we don't write out the same info twice.
+	private HashSet<ArtifactNode> seenArtifacts = new HashSet<>(); //so we don't write out the same info twice.
 
 	private void indent() throws XMLStreamException {
 		writer.writeCharacters("\n");
@@ -64,11 +63,11 @@ public class TypeDependencyGraphXmlWriter {
 	private void writeNode(Object node) throws Exception {
 		level++;
 		try {
-			if (node instanceof Artifact) {
-				Artifact a = ((Artifact) node);
+			if (node instanceof ArtifactNode) {
+				ArtifactNode a = ((ArtifactNode) node);
 				indent();
 				writer.writeStartElement("artifact");
-				writer.writeAttribute("id", a.getGroupId()+":"+a.getArtifactId()+":"+a.getBaseVersion());
+				writer.writeAttribute("id", a.getCoords());
 				
 				if (!isSeen(a)) {
 					writeChildren(node);
@@ -85,7 +84,7 @@ public class TypeDependencyGraphXmlWriter {
 		}
 	}
 
-	private boolean isSeen(Artifact a) {
+	private boolean isSeen(ArtifactNode a) {
 		boolean isNew = seenArtifacts.add(a);
 		return !isNew;
 	}

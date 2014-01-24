@@ -12,6 +12,7 @@ package org.springsource.ide.eclipse.boot.maven.analyzer.aether;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -19,8 +20,11 @@ import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.collection.CollectResult;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -28,12 +32,17 @@ import org.eclipse.aether.repository.RemoteRepository.Builder;
 import org.eclipse.aether.repository.RepositoryPolicy;
 import org.eclipse.aether.resolution.ArtifactDescriptorRequest;
 import org.eclipse.aether.resolution.ArtifactDescriptorResult;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.ResolutionErrorPolicy;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.util.graph.manager.DependencyManagerUtils;
 import org.eclipse.aether.util.graph.transformer.ConflictResolver;
+import org.springframework.stereotype.Component;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.Assert;
 
 /**
  * Using eclipse Aether to analuyze dependencies, resolve artifacts etc. We use this now instead
@@ -51,6 +60,7 @@ import org.eclipse.aether.util.graph.transformer.ConflictResolver;
  *  
  * @author Kris De Volder
  */
+@Component
 public class AetherHelper {
 
 	public RepositorySystem newRepositorySystem() {
@@ -79,6 +89,7 @@ public class AetherHelper {
     public DefaultRepositorySystemSession newRepositorySystemSession( RepositorySystem system )
     {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
+		//session.set(resolutionErrorPolicy);
 
         LocalRepository localRepo = new LocalRepository( "target/local-repo" );
         session.setLocalRepositoryManager( system.newLocalRepositoryManager( session, localRepo ) );
@@ -146,4 +157,59 @@ public class AetherHelper {
 //        collectResult.getRoot().accept( new ConsoleDependencyGraphDumper() );
  	}
 
+	
+	/**
+	 * Given a a 'parentPom' artifact constructs a dependency graph with all
+	 * managed dependencies as roots.
+	 * @return 
+	 */
+	public CollectResult getManagedDependencyGraph(Artifact parentPom) throws Exception {
+        RepositorySystem system = newRepositorySystem();
+        DefaultRepositorySystemSession session = newRepositorySystemSession( system );
+
+        session.setConfigProperty( ConflictResolver.CONFIG_PROP_VERBOSE, true );
+        session.setConfigProperty( DependencyManagerUtils.CONFIG_PROP_VERBOSE, true );
+        
+        ArtifactDescriptorRequest descriptorRequest = new ArtifactDescriptorRequest();
+        descriptorRequest.setArtifact( parentPom );
+        descriptorRequest.setRepositories( newRepositories( system, session ) );
+        ArtifactDescriptorResult descriptorResult = system.readArtifactDescriptor( session, descriptorRequest );
+
+        CollectRequest collectRequest = new CollectRequest();
+        
+        
+        //collectRequest.setRootArtifact( descriptorResult.getArtifact() );
+        collectRequest.setDependencies( descriptorResult.getManagedDependencies() );
+        collectRequest.setManagedDependencies( descriptorResult.getManagedDependencies() );
+        collectRequest.setRepositories( descriptorRequest.getRepositories() );
+
+        CollectResult collectResult = system.collectDependencies( session, collectRequest );
+
+        return collectResult;
+
+	}
+
+	public List<Artifact> resolve(List<Artifact> artifacts) throws Exception {
+        RepositorySystem system = newRepositorySystem();
+        DefaultRepositorySystemSession session = newRepositorySystemSession( system );
+
+		List<ArtifactRequest> requests = new ArrayList<ArtifactRequest>(artifacts.size());
+        List<RemoteRepository> repos = newRepositories(system, session);
+        for (Artifact artifact : artifacts) {
+        	ArtifactRequest request = new ArtifactRequest();
+        	request.setRepositories(repos);
+        	request.setArtifact(artifact);
+        	requests.add(request);
+		}
+
+		List<ArtifactResult> resolveResults = system.resolveArtifacts(session, requests);
+		ArrayList<Artifact> resolvedArtifacts = new ArrayList<Artifact>(resolveResults.size());
+        for (ArtifactResult ra : resolveResults) {
+        	Assert.isNotNull(ra.getArtifact());
+			resolvedArtifacts.add(ra.getArtifact());
+		}
+        return resolvedArtifacts;
+	}
+	
+	
 }
