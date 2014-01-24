@@ -64,7 +64,6 @@ public class AetherialController {
 		this.aether = aether;
 	}
 	
-	
 	@RequestMapping(value = "/boot/typegraph/{version:.*}", produces = {"text/xml; charset=UTF-8"})
 	public void getTypeGraphMaybe(
 			@PathVariable("version") String springBootVersion,

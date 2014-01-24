@@ -219,7 +219,7 @@ public class DirectedGraph {
 	 * Get successors but limit results to only those nodes of a given type.
 	 */
 	@SuppressWarnings("unchecked")
-	public <T> Collection<T> getSuccessors(Artifact node, Class<T> klass) {
+	public <T> Collection<T> getSuccessors(Object node, Class<T> klass) {
 		ArrayList<T> results = new ArrayList<T>();
 		for (Object child : getSuccessors(node)) {
 			if (klass.isAssignableFrom(child.getClass())) {

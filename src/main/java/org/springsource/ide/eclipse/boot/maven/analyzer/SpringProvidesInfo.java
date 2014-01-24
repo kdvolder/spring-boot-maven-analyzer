@@ -12,18 +12,25 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.eclipse.aether.artifact.Artifact;
+import org.springsource.ide.eclipse.boot.maven.analyzer.graph.ArtifactNode;
+import org.springsource.ide.eclipse.boot.maven.analyzer.graph.ArtifactNodeFactory;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.ExceptionUtil;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Logger;
 
 public class SpringProvidesInfo {
 
 	static final String SPRING_PROVIDES_PROPS_FILE_PATH = "META-INF/spring.provides";
-	private Map<String, List<Artifact>> providers = new HashMap<String, List<Artifact>>();
+	private Map<String, List<ArtifactNode>> providers = new HashMap<String, List<ArtifactNode>>();
+	private ArtifactNodeFactory anf;
+	
+	public SpringProvidesInfo(ArtifactNodeFactory anf) {
+		this.anf = anf;
+	}
 	
 	/**
 	 * Inverse lookup based on 'spring.provides' info contained in spring boot starter jars.
 	 */
-	public Collection<Artifact> getPreferedProviders(String artifactId) {
+	public Collection<ArtifactNode> getPreferedProviders(String artifactId) {
 		return providers.get(artifactId);
 	}
 
@@ -69,12 +76,12 @@ public class SpringProvidesInfo {
 	}
 	
 	private void addProvided(Artifact artifact, String provided) {
-		List<Artifact> list = providers.get(provided);
+		List<ArtifactNode> list = providers.get(provided);
 		if (list==null) {
-			list = new ArrayList<Artifact>();
+			list = new ArrayList<ArtifactNode>();
 			providers.put(provided, list);
 		}
-		list.add(artifact);
+		list.add(anf.create(artifact));
 	}
 	
 }

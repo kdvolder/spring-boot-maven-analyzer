@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.eclipse.aether.artifact.Artifact;
+import org.springsource.ide.eclipse.boot.maven.analyzer.graph.ArtifactNode;
 import org.springsource.ide.eclipse.boot.maven.analyzer.graph.DirectedGraph;
 import org.springsource.ide.eclipse.boot.maven.analyzer.typediscovery.ExternalType;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Assert;
@@ -69,13 +69,13 @@ public class GraphSimplifier {
 	 */
 	private boolean useClosestHeuristic = false;
 		
-	public boolean isWarningExempt(Artifact a) {
+	public boolean isWarningExempt(ArtifactNode a) {
 		if (isWarningExempt(a.getArtifactId())) {
 			return true;
 		}
 		for (Object _ancestor : graph.getAncestors(a)) {
 			//System.out.println("ancestor: "+_ancestor);
-			Artifact ancestor = (Artifact) _ancestor;
+			ArtifactNode ancestor = (ArtifactNode) _ancestor;
 			if (isWarningExempt(ancestor.getArtifactId())) {
 				return true;
 			}
@@ -107,7 +107,8 @@ public class GraphSimplifier {
 	}
 
 	private void run() {
-		detectVersionConflicts();
+		//detectVersionConflicts(); // commented. Somewhat pointless because the graph we get
+									// already performed conflict resolution.
 		//removeRedundantEdges(); //Makes the disambiguation rule more effective?
 		disambiguate();
 		removeEmptyArtifacts();
@@ -125,8 +126,8 @@ public class GraphSimplifier {
 	private void removeRedundantEdges() {
 		ArrayList<Object> nodes = new ArrayList<Object>(graph.getNodes());
 		for (Object _node : nodes) {
-			if (_node instanceof Artifact) {
-				Artifact child = (Artifact) _node;
+			if (_node instanceof ArtifactNode) {
+				ArtifactNode child = (ArtifactNode) _node;
 				Collection<Object> parents = new ArrayList<Object>(graph.getPredecessors(child));
 				for (Object parent : parents) {
 					//Is the edge between child and parent redundant?
@@ -162,8 +163,8 @@ public class GraphSimplifier {
 	private void removeEmptyArtifacts() {
 		ArrayList<Object> nodes = new ArrayList<Object>(graph.getNodes());
 		for (Object _node : nodes) {
-			if (_node instanceof Artifact) {
-				Artifact node = (Artifact) _node;
+			if (_node instanceof ArtifactNode) {
+				ArtifactNode node = (ArtifactNode) _node;
 				Collection<Object> types = graph.getSuccessors(node);
 				if (types.isEmpty()) {
 					deleteIfEmpty(node);
@@ -204,14 +205,14 @@ public class GraphSimplifier {
 	private boolean isEmpty(Object node) {
 		return graph.getSuccessors(node).isEmpty();
 	}
-	
+
 	private void detectVersionConflicts() {
-		Map<String, Artifact> idmap = new HashMap<String, Artifact>();
+		Map<String, ArtifactNode> idmap = new HashMap<String, ArtifactNode>();
 		for (Object node : graph.getNodes()) {
-			if (node instanceof Artifact) {
-				Artifact art = (Artifact) node;
+			if (node instanceof ArtifactNode) {
+				ArtifactNode art = (ArtifactNode) node;
 				String key = art.getGroupId()+":"+art.getArtifactId();
-				Artifact existing = idmap.get(key);
+				ArtifactNode existing = idmap.get(key);
 				if (existing!=null && !existing.equals(art)) {
 					warn("version conflict");
 					warn("   "+existing);
@@ -224,9 +225,9 @@ public class GraphSimplifier {
 	public void disambiguate() {
 		Collection<Object> nodes = graph.getNodes();
 		for (Object _node : nodes) {
-			if (_node instanceof Artifact) {
-				Artifact node = (Artifact) _node;
-				Collection<Artifact> preferedProviders = getPreferedProviders(node);
+			if (_node instanceof ArtifactNode) {
+				ArtifactNode node = (ArtifactNode) _node;
+				Collection<ArtifactNode> preferedProviders = getPreferedProviders(node);
 				if (preferedProviders.isEmpty()) {
 					// No information available to adjust the graph with. 
 					// Nothing to do. 
@@ -275,16 +276,16 @@ public class GraphSimplifier {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected Collection<Artifact> getPreferedProviders(Artifact node) {
+	protected Collection<ArtifactNode> getPreferedProviders(ArtifactNode node) {
 		//1: consult spring.provides info. This is always 'authorative' if it exists, since it was explicitly
 		//  provided by spring-boot developers.
-		Collection<Artifact> preferedProviders = providesInfo.getPreferedProviders(node.getArtifactId());
+		Collection<ArtifactNode> preferedProviders = providesInfo.getPreferedProviders(node.getArtifactId());
 		if (preferedProviders==null) {
 			preferedProviders = Collections.EMPTY_SET;
 		} else {
 			Collection<Object> validProviders = graph.getAncestors(node);
 			//It is not safe to mutate the preferedProviders collection directly (it is 'owned' by the providesInfo object).
-			preferedProviders = new ArrayList<Artifact>(preferedProviders);
+			preferedProviders = new ArrayList<ArtifactNode>(preferedProviders);
 			if (!preferedProviders.isEmpty()) {
 				preferedProviders.retainAll(validProviders);
 				if (preferedProviders.isEmpty()) {
@@ -296,7 +297,7 @@ public class GraphSimplifier {
 		if (!preferedProviders.isEmpty()) {
 			if (preferedProviders.size()>1) {
 				warn("AMBIGUOUS "+node.getArtifactId()+" (info from spring.provides files):");
-				for (Artifact artifact : preferedProviders) {
+				for (ArtifactNode artifact : preferedProviders) {
 					warn("    "+artifact.getArtifactId());
 				}
 			}
@@ -336,7 +337,7 @@ public class GraphSimplifier {
 	 * @param node
 	 * @return
 	 */
-	public Collection<Artifact> getPreferedProvidersFromGraphStructure(Artifact node) {
+	public Collection<ArtifactNode> getPreferedProvidersFromGraphStructure(ArtifactNode node) {
 		if (isStarter(node)) {
 			//Starters always 'provide themselves'.
 			return singleton(node);
@@ -345,9 +346,9 @@ public class GraphSimplifier {
 		Map<Object, Integer> ancestorDistances = graph.getAncestorsWithDistance(node);
 		//Rule 0: check the default starters list
 		int defaultStarterIndex = Integer.MAX_VALUE;
-		Artifact defaultStarter = null;
+		ArtifactNode defaultStarter = null;
 		for (Object _anc : ancestorDistances.keySet()) {
-			Artifact anc = (Artifact) _anc;
+			ArtifactNode anc = (ArtifactNode) _anc;
 			for (int i = 0; i < DEFAULT_STARTERS.length; i++) {
 				if (anc.getArtifactId().equals(DEFAULT_STARTERS[i])) {
 					if (i<defaultStarterIndex) {
@@ -362,9 +363,9 @@ public class GraphSimplifier {
 			}
 		}
 		
-		ArrayList<Artifact> starters = new ArrayList<Artifact>();
+		ArrayList<ArtifactNode> starters = new ArrayList<ArtifactNode>();
 		for (Object _anc : ancestorDistances.keySet()) {
-			Artifact anc = (Artifact) _anc;
+			ArtifactNode anc = (ArtifactNode) _anc;
 			if (isStarter(anc)) {
 				starters.add(anc);
 			}
@@ -381,19 +382,19 @@ public class GraphSimplifier {
 		if (useClosestHeuristic) {
 			//2.a keep the 'closest one(s)'
 			warn("Using retain closest rule for:  "+node.getArtifactId()); 
-			for (Artifact artifact : starters) {
+			for (ArtifactNode artifact : starters) {
 				warn("    "+artifact.getArtifactId() + " dist "+ancestorDistances.get(artifact));
 			}
 			retainClosest(starters, ancestorDistances);
 			warn("==> "+(starters.size()==1?"RESOLVED":"AMBIGUOUS"));
-			for (Artifact artifact : starters) {
+			for (ArtifactNode artifact : starters) {
 				warn("    "+artifact.getArtifactId() + " dist "+ancestorDistances.get(artifact));
 			}
 			return starters;
 		} else {
 			//2.b when unclear who 'owns' a jar, nobody owns it.
 			warn("AMBIGUOUS: Several starters provide: "+node.getArtifactId());
-			for (Artifact artifact : starters) {
+			for (ArtifactNode artifact : starters) {
 				warn("    "+artifact.getArtifactId());
 			}
 			warn("==> RESOLVED: no starter provides this jar");
@@ -401,7 +402,7 @@ public class GraphSimplifier {
 		}
 	}
 
-	private Collection<Artifact> singleton(Artifact node) {
+	private Collection<ArtifactNode> singleton(ArtifactNode node) {
 		return Collections.singleton(node);
 //		ArrayList<Artifact> collection = new ArrayList<Artifact>();
 //		collection.add(node);
@@ -413,18 +414,18 @@ public class GraphSimplifier {
 	 * remove from the collection all nodes except the ones at
 	 * the shortest distance.
 	 */
-	private void retainClosest(Collection<Artifact> nodes, Map<Object, Integer> distances) {
+	private void retainClosest(Collection<ArtifactNode> nodes, Map<Object, Integer> distances) {
 		//Determine shortest distance ...
 		int shortestDistance = Integer.MAX_VALUE;
-		for (Artifact node : nodes) {
+		for (ArtifactNode node : nodes) {
 			int dist = distances.get(node);
 			if (dist<shortestDistance) {
 				shortestDistance = dist;
 			}
 		}
 		//Remove all but the one(s) that are at shortest distance.
-		for (Iterator<Artifact> iterator = nodes.iterator(); iterator.hasNext();) {
-			Artifact artifact = iterator.next();
+		for (Iterator<ArtifactNode> iterator = nodes.iterator(); iterator.hasNext();) {
+			ArtifactNode artifact = iterator.next();
 			int dist = distances.get(artifact);
 			if (dist!=shortestDistance) {
 				iterator.remove();
@@ -437,7 +438,7 @@ public class GraphSimplifier {
 //		return providesInfo.getPreferedProviders(node.getArtifactId());
 //	}
 
-	private boolean isStarter(Artifact node) {
+	private boolean isStarter(ArtifactNode node) {
 		return node.getArtifactId().startsWith("spring-boot-starter");
 	}
 

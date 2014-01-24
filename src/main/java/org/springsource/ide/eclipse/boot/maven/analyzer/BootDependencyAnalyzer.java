@@ -136,23 +136,16 @@ public class BootDependencyAnalyzer {
 		
 		//Step 1 collect the infos from 'spring.provides' properties file so they can be used in the next stage.
 		if (useSpringProvidesInfo) {
-			providesInfo = new SpringProvidesInfo();
+			providesInfo = new SpringProvidesInfo(anf);
 			for (Artifact artifact : resolvedArtifacts) {
 				providesInfo.process(artifact);
 			}
 		}
-//		
-//		
-//		//Step 2 build a copy of our types + dependencies graph.
-//		GraphBuildingDependencyVisitor graphBuilder = new GraphBuildingDependencyVisitor();
-//		tree.accept(graphBuilder);
-//		DirectedGraph graph = graphBuilder.getGraph();
-//		
-//		//Step 3 massage the graph to disambiguate type suggestions based on springprovides infos.
-//		if (useSpringProvidesInfo) {
-//			GraphSimplifier.simplify(graph, providesInfo);
-//		}
-//		
+		
+//		//Step 2 massage the graph to disambiguate type suggestions based on springprovides infos.
+		if (useSpringProvidesInfo) {
+			GraphSimplifier.simplify(graph, providesInfo);
+		}
 		
 		//Step 4: save massaged graph to designated output stream.
 		saveAsXML(graph);

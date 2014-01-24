@@ -12,13 +12,14 @@ package org.springsource.ide.eclipse.boot.maven.analyzer.graph;
 
 import java.io.File;
 
+import org.eclipse.aether.artifact.DefaultArtifact;
+
 /**
  * @author Kris De Volder
  */
 public class ArtifactNode {
 
 	private String coords;
-	private File file;
 
 	public ArtifactNode(String coords) {
 		this.coords = coords;
@@ -55,16 +56,16 @@ public class ArtifactNode {
 		return true;
 	}
 	
-	public void setFile(File resolvedTo) {
-		this.file = resolvedTo;
-	}
-	
-	public File getFile() {
-		return this.file;
-	}
-
 	public String getCoords() {
 		return coords;
+	}
+
+	public String getArtifactId() {
+		return new DefaultArtifact(coords).getArtifactId();
+	}
+
+	public String getGroupId() {
+		return new DefaultArtifact(coords).getGroupId();
 	}
 	
 }
