@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.OutputStream;
 import java.util.List;
@@ -38,6 +39,9 @@ import org.springsource.ide.eclipse.boot.maven.analyzer.util.Requestor;
  */
 public class BootDependencyAnalyzer {
 
+	/**
+	 * Server log... not accessible via end points only on the server itself.
+	 */
 	static Log log = LogFactory.getLog(BootDependencyAnalyzer.class);
 	
 	/**
@@ -51,6 +55,7 @@ public class BootDependencyAnalyzer {
 		analyzer.setUseSpringProvidesInfo(true); 
 		analyzer.run();
 	}
+
 
 	/**
 	 * Set a file to which the xml dependency data should be written.
@@ -79,6 +84,7 @@ public class BootDependencyAnalyzer {
 	 * If not explicitly set the result is printed to System.out
 	 */
 	private Outputter xmlOutput = null;
+	private UserLog userLog;
 	
 	public void setUseSpringProvidesInfo(boolean useSpringProvidesInfo) {
 		this.useSpringProvidesInfo = useSpringProvidesInfo;
@@ -91,7 +97,6 @@ public class BootDependencyAnalyzer {
 		}
 		return xmlOutput;
 	}
-
 
 	public BootDependencyAnalyzer(AetherHelper aether) throws PlexusContainerException {
 		this.aether = aether;
@@ -114,42 +119,58 @@ public class BootDependencyAnalyzer {
 	}
 	
 	public void run() throws Exception {
-		Artifact parentPom = Defaults.parentPom(bootVersion);
-		
-		DependencyNode tree = aether.getManagedDependencyGraph(parentPom).getRoot();
-		
-		
-		//The tree/graph just computed is not yet resolved. I.e. dependency structure is known 
-		// but the binary jar artefacts are not yet downloaded or resolved to actual files.
-		//The graph also has verbose options for conflict resolution and managed dependencies enabled.
-		//This means that the graph still contains data about conflicts and changes made based on dependency management.
-		//IMPORTANT: This graph may contain duplicate artifacts and is not suitable for resolution (according to aether docs).
-		
-		GraphBuildingDependencyVisitor graphBuilder = new GraphBuildingDependencyVisitor(anf);
-		tree.accept(graphBuilder);
-		TypeAndArtifactGraph graph = graphBuilder.getGraph();
-		
-		List<Artifact> resolvedArtifacts = aether.resolve(graph.getArtifacts());
-		for (Artifact artifact : resolvedArtifacts) {
-			addTypesFrom(artifact, graph);
-		}
-		
-		//Step 1 collect the infos from 'spring.provides' properties file so they can be used in the next stage.
-		if (useSpringProvidesInfo) {
-			providesInfo = new SpringProvidesInfo(anf);
+		UserLog userLog = getUserLog();
+		try {
+			userLog.println("=== Dependency Graph Analysis Report ===");
+			Artifact parentPom = Defaults.parentPom(bootVersion);
+			userLog.println("Boot Version: "+bootVersion);
+			
+			DependencyNode tree = aether.getManagedDependencyGraph(parentPom).getRoot();
+			
+			
+			//The tree/graph just computed is not yet resolved. I.e. dependency structure is known 
+			// but the binary jar artefacts are not yet downloaded or resolved to actual files.
+			//The graph also has verbose options for conflict resolution and managed dependencies enabled.
+			//This means that the graph still contains data about conflicts and changes made based on dependency management.
+			//IMPORTANT: This graph may contain duplicate artifacts and is not suitable for resolution (according to aether docs).
+			
+			GraphBuildingDependencyVisitor graphBuilder = new GraphBuildingDependencyVisitor(anf);
+			tree.accept(graphBuilder);
+			TypeAndArtifactGraph graph = graphBuilder.getGraph();
+			
+			List<Artifact> resolvedArtifacts = aether.resolve(graph.getArtifacts());
 			for (Artifact artifact : resolvedArtifacts) {
-				providesInfo.process(artifact);
+				addTypesFrom(artifact, graph);
 			}
+			
+			//Step 1 collect the infos from 'spring.provides' properties file so they can be used in the next stage.
+			if (useSpringProvidesInfo) {
+				providesInfo = new SpringProvidesInfo(anf);
+				for (Artifact artifact : resolvedArtifacts) {
+					providesInfo.process(artifact);
+				}
+			}
+			
+	//		//Step 2 massage the graph to disambiguate type suggestions based on springprovides infos.
+			if (useSpringProvidesInfo) {
+				GraphSimplifier.simplify(graph, providesInfo, userLog);
+			}
+			
+			//Step 4: save massaged graph to designated output stream.
+			saveAsXML(graph);
+		} finally {
+			userLog.dispose();
 		}
 		
-//		//Step 2 massage the graph to disambiguate type suggestions based on springprovides infos.
-		if (useSpringProvidesInfo) {
-			GraphSimplifier.simplify(graph, providesInfo);
+	}
+
+
+	private synchronized UserLog getUserLog() {
+		if (userLog==null) {
+			//By default write user  on System out.
+			userLog = new UserLog(System.out);
 		}
-		
-		//Step 4: save massaged graph to designated output stream.
-		saveAsXML(graph);
-		
+		return userLog;
 	}
 
 
@@ -165,9 +186,14 @@ public class BootDependencyAnalyzer {
 	public void setXmlOut(OutputStream out) {
 		setXmlOutputter(Outputter.toStream(out));
 	}
-
+	
+	public synchronized void setLog(ByteArrayOutputStream log) {
+		userLog = new UserLog(log);
+	}
+	
 	public void setBootVersion(String bootVersion) {
 		this.bootVersion = bootVersion;
 	}
+
 
 }

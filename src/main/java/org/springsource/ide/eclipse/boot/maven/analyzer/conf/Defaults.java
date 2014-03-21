@@ -1,8 +1,5 @@
 package org.springsource.ide.eclipse.boot.maven.analyzer.conf;
 
-import java.io.File;
-import java.net.URISyntaxException;
-
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 

@@ -70,17 +70,34 @@ public class AetherialController {
 			HttpServletResponse resp
 			) throws Exception {
 		log.info("type graph request received for '"+springBootVersion+"'");
-		Future<byte[]> result = computer.getTypeGraphResponseBody(springBootVersion);
-		sendResponse(resp, result);
+		Future<byte[]> r = computer.getTypeGraphXmlData(springBootVersion);
+		sendResponse(resp, r);
+	}
+
+	@RequestMapping(value = "/boot/typegraph-log/{version:.*}", produces = {"text/plain; charset=UTF-8"})
+	public void getTypeGraphLogMaybe(
+			@PathVariable("version") String springBootVersion,
+			HttpServletResponse resp
+			) throws Exception {
+		log.info("type graph request received for '"+springBootVersion+"'");
+		Future<byte[]> r = computer.getTypeGraphLogData(springBootVersion);
+		sendResponse(resp, r);
 	}
 	
 	@RequestMapping(value = "/boot/typegraph", produces = {"text/xml; charset=UTF-8"})
 	public void getTypeGraphMaybe(HttpServletResponse resp) throws Exception {
 		log.info("type graph request received NO VERSION");
-		Future<byte[]> result = computer.getTypeGraphResponseBody(Defaults.defaultVersion);
+		Future<byte[]> result = computer.getTypeGraphXmlData(Defaults.defaultVersion);
 		sendResponse(resp, result);
 	}
 
+	@RequestMapping(value = "/boot/typegraph-log", produces = {"text/plain; charset=UTF-8"})
+	public void getTypeGraphLogMaybe(HttpServletResponse resp) throws Exception {
+		log.info("type graph request received NO VERSION");
+		Future<byte[]> result = computer.getTypeGraphLogData(Defaults.defaultVersion);
+		sendResponse(resp, result);
+	}
+	
 	/**
 	 * Helper method to send a 'Future' as a response to the client. 
 	 * If the future is 'done' actual content (or error) is sent. Otherwise
@@ -100,8 +117,8 @@ public class AetherialController {
 			try {
 				byte[] resultData = result.get(); //this will throw in case of an error in processing.
 				resp.setStatus(HttpServletResponse.SC_OK);
-				resp.setContentType("text/xml");
-				resp.setCharacterEncoding("utf8");
+				//resp.setContentType(contentType);
+				//resp.setCharacterEncoding("utf8");
 				resp.getOutputStream().write(resultData);
 			} catch (Exception e) {
 				resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

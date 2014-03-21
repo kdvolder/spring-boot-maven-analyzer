@@ -11,6 +11,7 @@
 package org.springsource.ide.eclipse.boot.maven.analyzer.server;
 
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -22,7 +23,10 @@ import org.springframework.stereotype.Component;
 import org.springsource.ide.eclipse.boot.maven.analyzer.BootDependencyAnalyzer;
 import org.springsource.ide.eclipse.boot.maven.analyzer.aether.AetherHelper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
+import org.springsource.ide.eclipse.boot.maven.analyzer.util.FutureUtil;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.SimpleCache;
+
+import com.google.common.base.Function;
 
 /**
  * Computes data for typegraph http request asyncronously, returning a Future.
@@ -37,18 +41,24 @@ public class AsynchTypeGraphComputer {
 	static Log log = LogFactory.getLog(AsynchTypeGraphComputer.class);
 
 	/**
-	 * Use single thread executor because it is not safe to run multiple maven operations
+	 * Use single thread executor for maven stuffs it is not safe to run multiple maven operations
 	 * in parallel.
 	 */
-	private ExecutorService executor = Executors.newSingleThreadExecutor();
+	private ExecutorService mvnExecutor = Executors.newSingleThreadExecutor();
+	
+	/**
+	 * Used for other stuff where executing in parallel isn't a issue.
+	 */
+	private FutureUtil futil = new FutureUtil(Executors.newCachedThreadPool());
 	
 	private AetherHelper aether;
 	
-	private SimpleCache<String, byte[]> cache = new SimpleCache<String, byte[]>(executor) {
+	private SimpleCache<String, TypeGraphResult> cache = new SimpleCache<String, TypeGraphResult>(mvnExecutor) {
 		@Override
-		protected byte[] compute(String springBootVersion) throws Exception {
+		protected TypeGraphResult compute(String springBootVersion) throws Exception {
 			log.info("Computing typegraph: '"+springBootVersion+"'");
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ByteArrayOutputStream log = new ByteArrayOutputStream();
 			try {
 				//TODO: do some proper validation of version string
 //				if (springBootVersion.contains("XXX")) {
@@ -56,10 +66,11 @@ public class AsynchTypeGraphComputer {
 //				}
 				BootDependencyAnalyzer analyzer = new BootDependencyAnalyzer(aether);
 				analyzer.setXmlOut(out);
+				analyzer.setLog(log);
 				analyzer.setBootVersion(springBootVersion);
 				analyzer.setUseSpringProvidesInfo(true); 
 				analyzer.run();
-				return out.toByteArray();
+				return new TypeGraphResult(out.toByteArray(), log.toByteArray());
 			} finally {
 				//System.out.println(out.toString());
 				out.close();
@@ -76,7 +87,22 @@ public class AsynchTypeGraphComputer {
 		this.aether = aether;
 	}
 	
-	public Future<byte[]> getTypeGraphResponseBody(final String springBootVersion) {
-		return cache.get(springBootVersion);
+	public Future<byte[]> getTypeGraphXmlData(final String springBootVersion) {
+		return futil.map(cache.get(springBootVersion), new Function<TypeGraphResult, byte[]>() {
+			@Override
+			public byte[] apply(TypeGraphResult tgr) {
+				return tgr.xmlData;
+			}
+		});
 	}
+	
+	public Future<byte[]> getTypeGraphLogData(final String springBootVersion) {
+		return futil.map(cache.get(springBootVersion), new Function<TypeGraphResult, byte[]>() {
+			@Override
+			public byte[] apply(TypeGraphResult tgr) {
+				return tgr.logData;
+			}
+		});
+	}
+	
 }

@@ -95,6 +95,8 @@ public class GraphSimplifier {
 	private DirectedGraph graph;
 	private SpringProvidesInfo providesInfo;
 
+	private UserLog userLog;
+
 	
 	public GraphSimplifier(DirectedGraph graph, SpringProvidesInfo providesInfo) {
 		Assert.isNotNull(providesInfo);
@@ -102,8 +104,14 @@ public class GraphSimplifier {
 		this.providesInfo = providesInfo;
 	}
 
-	public static void simplify(DirectedGraph graph, SpringProvidesInfo providesInfo) {
-		new GraphSimplifier(graph, providesInfo).run();
+	public static void simplify(DirectedGraph graph, SpringProvidesInfo providesInfo, UserLog userLog) {
+		GraphSimplifier simplifier = new GraphSimplifier(graph, providesInfo);
+		simplifier.setLog(userLog);
+		simplifier.run();
+	}
+
+	private void setLog(UserLog userLog) {
+		this.userLog = userLog;
 	}
 
 	private void run() {
@@ -443,9 +451,16 @@ public class GraphSimplifier {
 	}
 
 	private void warn(String string) {
-		System.out.println(string);
+		getUserLog().println(string);
 	}
 	
+	private synchronized UserLog getUserLog() {
+		if (userLog==null) {
+			userLog = new UserLog(System.out);
+		}
+		return userLog;
+	}
+
 	private void debug(String string) {
 		if (DEBUG) {
 			System.out.println(string);
