@@ -180,7 +180,7 @@ public class AetherialController {
 
 	@RequestMapping(value="/boot/mdeps/{version:.*}", produces = {"application/json; charset=UTF-8"})
 	@ResponseBody
-	private List<JsonDependency> getManagedDependencies(String bootVersion)
+	private List<JsonDependency> getManagedDependencies(@PathVariable("version") String bootVersion)
 			throws Exception {
 		Artifact parentPom = Defaults.parentPom(bootVersion);
 		List<Dependency> managedDeps = aether.getManagedDependencies(parentPom);
