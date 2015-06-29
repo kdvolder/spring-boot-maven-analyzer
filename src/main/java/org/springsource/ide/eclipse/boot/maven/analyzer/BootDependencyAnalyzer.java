@@ -44,7 +44,7 @@ public class BootDependencyAnalyzer {
 	 * Server log... not accessible via end points only on the server itself.
 	 */
 	static Log log = LogFactory.getLog(BootDependencyAnalyzer.class);
-	
+
 //	/**
 //	 * Example of how to use this analyzer.
 //	 */
@@ -54,7 +54,7 @@ public class BootDependencyAnalyzer {
 //		BootDependencyAnalyzer analyzer = new BootDependencyAnalyzer(new AetherHelper());
 //		analyzer.setBootVersion(Defaults.defaultVersion);
 //		analyzer.setXmlFile(new File("boot-completion-data.txt"));
-//		analyzer.setUseSpringProvidesInfo(true); 
+//		analyzer.setUseSpringProvidesInfo(true);
 //		analyzer.run();
 //		log.info("============== Exiting ============================");
 //
@@ -82,18 +82,18 @@ public class BootDependencyAnalyzer {
 	private String bootVersion;
 	private boolean useSpringProvidesInfo = false;
 	private SpringProvidesInfo providesInfo = null;
-	
+
 	/**
 	 * Where to write the xml file that is the main result of this analysis.
 	 * If not explicitly set the result is printed to System.out
 	 */
 	private Outputter xmlOutput = null;
 	private UserLog userLog;
-	
+
 	public void setUseSpringProvidesInfo(boolean useSpringProvidesInfo) {
 		this.useSpringProvidesInfo = useSpringProvidesInfo;
 	}
-	
+
 	private synchronized Outputter getXmlOutputter() throws Exception {
 		if (xmlOutput==null) {
 			//Ensure we have some place to write to by default
@@ -106,7 +106,7 @@ public class BootDependencyAnalyzer {
 		this.aether = aether;
 	}
 
-	
+
 	public void addTypesFrom(final Artifact artifact, final TypeAndArtifactGraph graph) {
 		ArtifactTypeDiscovery discoverer = new ArtifactTypeDiscovery(artifact);
 		discoverer.getTypes(new Requestor<ExternalTypeEntry>() {
@@ -121,34 +121,34 @@ public class BootDependencyAnalyzer {
 			}
 		});
 	}
-	
+
 	public void run() throws Exception {
 		UserLog userLog = getUserLog();
 		try {
 			userLog.println("=== Dependency Graph Analysis Report ===");
 			Artifact parentPom = Defaults.parentPom(bootVersion);
 			userLog.println("Boot Version: "+bootVersion);
-			
+
 			CollectResult collectResult = aether.getManagedDependencyGraph(parentPom);
 			DependencyNode tree = collectResult.getRoot();
-			
-			
-			//The tree/graph just computed is not yet resolved. I.e. dependency structure is known 
+
+
+			//The tree/graph just computed is not yet resolved. I.e. dependency structure is known
 			// but the binary jar artefacts are not yet downloaded or resolved to actual files.
 			//The graph also has verbose options for conflict resolution and managed dependencies enabled.
 			//This means that the graph still contains data about conflicts and changes made based on dependency management.
 			//IMPORTANT: This graph may contain duplicate artifacts and is not suitable for resolution (according to aether docs).
-			
+
 			GraphBuildingDependencyVisitor graphBuilder = new GraphBuildingDependencyVisitor(anf);
 			tree.accept(graphBuilder);
 			TypeAndArtifactGraph graph = graphBuilder.getGraph();
-			
+
 			boolean ignoreUnresolved = true;
 			List<Artifact> resolvedArtifacts = aether.resolve(graph.getArtifacts(), ignoreUnresolved);
 			for (Artifact artifact : resolvedArtifacts) {
 				addTypesFrom(artifact, graph);
 			}
-			
+
 			//Step 1 collect the infos from 'spring.provides' properties file so they can be used in the next stage.
 			if (useSpringProvidesInfo) {
 				providesInfo = new SpringProvidesInfo(anf);
@@ -156,18 +156,18 @@ public class BootDependencyAnalyzer {
 					providesInfo.process(artifact);
 				}
 			}
-			
+
 	//		//Step 2 massage the graph to disambiguate type suggestions based on springprovides infos.
 			if (useSpringProvidesInfo) {
 				GraphSimplifier.simplify(graph, providesInfo, userLog);
 			}
-			
+
 			//Step 4: save massaged graph to designated output stream.
 			saveAsXML(graph);
 		} finally {
 			userLog.dispose();
 		}
-		
+
 	}
 
 
@@ -192,11 +192,11 @@ public class BootDependencyAnalyzer {
 	public void setXmlOut(OutputStream out) {
 		setXmlOutputter(Outputter.toStream(out));
 	}
-	
+
 	public synchronized void setLog(ByteArrayOutputStream log) {
 		userLog = new UserLog(log);
 	}
-	
+
 	public void setBootVersion(String bootVersion) {
 		this.bootVersion = bootVersion;
 	}

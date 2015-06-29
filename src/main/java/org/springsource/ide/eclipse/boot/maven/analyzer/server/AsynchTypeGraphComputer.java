@@ -11,7 +11,7 @@
 package org.springsource.ide.eclipse.boot.maven.analyzer.server;
 
 import java.io.ByteArrayOutputStream;
-import java.util.concurrent.Callable;
+import java.io.PrintWriter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -45,14 +45,14 @@ public class AsynchTypeGraphComputer {
 	 * in parallel.
 	 */
 	private ExecutorService mvnExecutor = Executors.newSingleThreadExecutor();
-	
+
 	/**
 	 * Used for other stuff where executing in parallel isn't a issue.
 	 */
 	private FutureUtil futil = new FutureUtil(Executors.newCachedThreadPool());
-	
+
 	private AetherHelper aether;
-	
+
 	private SimpleCache<String, TypeGraphResult> cache = new SimpleCache<String, TypeGraphResult>(mvnExecutor) {
 		@Override
 		protected TypeGraphResult compute(String springBootVersion) throws Exception {
@@ -68,7 +68,7 @@ public class AsynchTypeGraphComputer {
 				analyzer.setXmlOut(out);
 				analyzer.setLog(log);
 				analyzer.setBootVersion(springBootVersion);
-				analyzer.setUseSpringProvidesInfo(true); 
+				analyzer.setUseSpringProvidesInfo(true);
 				analyzer.run();
 				return new TypeGraphResult(out.toByteArray(), log.toByteArray());
 			} finally {
@@ -77,16 +77,16 @@ public class AsynchTypeGraphComputer {
 			}
 		}
 	};
-	
+
 	public AsynchTypeGraphComputer() {
 		cache.setTimeToLive(Defaults.cacheTTL);
 	}
-	
-	@Autowired(required=true) 
+
+	@Autowired(required=true)
 	public void setAetherHelper(AetherHelper aether) {
 		this.aether = aether;
 	}
-	
+
 	public Future<byte[]> getTypeGraphXmlData(final String springBootVersion) {
 		return futil.map(cache.get(springBootVersion), new Function<TypeGraphResult, byte[]>() {
 			@Override
@@ -95,7 +95,7 @@ public class AsynchTypeGraphComputer {
 			}
 		});
 	}
-	
+
 	public Future<byte[]> getTypeGraphLogData(final String springBootVersion) {
 		return futil.map(cache.get(springBootVersion), new Function<TypeGraphResult, byte[]>() {
 			@Override
@@ -104,5 +104,9 @@ public class AsynchTypeGraphComputer {
 			}
 		});
 	}
-	
+
+	public void showStateInfo(PrintWriter out) {
+		cache.showState(out);
+	}
+
 }

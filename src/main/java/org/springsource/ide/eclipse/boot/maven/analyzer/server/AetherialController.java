@@ -13,6 +13,7 @@ package org.springsource.ide.eclipse.boot.maven.analyzer.server;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -46,24 +47,24 @@ import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
 public class AetherialController {
 
 	static Log log = LogFactory.getLog(AetherialController.class);
-	
+
 	public AetherialController() {
 	}
-	
+
 	private AsynchTypeGraphComputer computer = null;
-	
+
 	private AetherHelper aether;
 
 	@Autowired(required=true)
 	public void setAsynchTypeGraphComputer(AsynchTypeGraphComputer computer) {
 		this.computer = computer;
 	}
-	
+
 	@Autowired(required=true)
 	public void setAetherHelper(AetherHelper aether) {
 		this.aether = aether;
 	}
-	
+
 	@RequestMapping(value = "/boot/typegraph/{version:.*}", produces = {"text/xml; charset=UTF-8"})
 	public void getTypeGraphMaybe(
 			@PathVariable("version") String springBootVersion,
@@ -83,7 +84,7 @@ public class AetherialController {
 		Future<byte[]> r = computer.getTypeGraphLogData(springBootVersion);
 		sendResponse(resp, r);
 	}
-	
+
 	@RequestMapping(value = "/boot/typegraph", produces = {"text/xml; charset=UTF-8"})
 	public void getTypeGraphMaybe(HttpServletResponse resp) throws Exception {
 		log.info("type graph request received NO VERSION");
@@ -91,15 +92,23 @@ public class AetherialController {
 		sendResponse(resp, result);
 	}
 
+	@RequestMapping(value = "/boot/typegraph-cache-state", produces = {"text/plain; charset=UTF-8"})
+	public void getCacheState(HttpServletResponse resp) throws Exception {
+		log.info("request for typegraph cache-state received");
+		PrintWriter writer = resp.getWriter();
+		computer.showStateInfo(writer);
+	}
+
+
 	@RequestMapping(value = "/boot/typegraph-log", produces = {"text/plain; charset=UTF-8"})
 	public void getTypeGraphLogMaybe(HttpServletResponse resp) throws Exception {
 		log.info("type graph request received NO VERSION");
 		Future<byte[]> result = computer.getTypeGraphLogData(Defaults.defaultVersion);
 		sendResponse(resp, result);
 	}
-	
+
 	/**
-	 * Helper method to send a 'Future' as a response to the client. 
+	 * Helper method to send a 'Future' as a response to the client.
 	 * If the future is 'done' actual content (or error) is sent. Otherwise
 	 * a 'try later' result is sent instead.
 	 */
@@ -134,14 +143,14 @@ public class AetherialController {
 //	public String ulimitDashOpt(@PathVariable("opt") String opt) throws Exception {
 //		ByteArrayOutputStream out = new ByteArrayOutputStream();
 //		Process process = Runtime.getRuntime().exec(new String[] {
-//			"bash", "-c", "ulimit -"+opt	
+//			"bash", "-c", "ulimit -"+opt
 //		});
 //		process.waitFor();
 //		IOUtil.pipe(process.getInputStream(), out);
 //		IOUtil.pipe(process.getErrorStream(), out);
 //		return out.toString("UTF-8");
 //	}
-	
+
 	@RequestMapping(value="/maven/artifact/{group}/{arti}/{version}")
 	public void getArtifact(
 			@PathVariable("group") String gid,
@@ -202,20 +211,20 @@ public class AetherialController {
 	public void getManagedDependencyGraph(HttpServletResponse resp) throws Exception {
 		getManagedDependencyGraph(Defaults.defaultVersion, resp);
 	}
-	
+
 	@RequestMapping(value="/boot/mdgraph/{version:.*}"/*, produces = {"text/plain; charset=UTF-8"}*/)
 	public void getManagedDependencyGraph(@PathVariable("version")String bootVersion, HttpServletResponse resp) throws Exception {
 		Artifact parentPom = Defaults.parentPom(bootVersion);
 		CollectResult dgraphResult = aether.getManagedDependencyGraph(parentPom);
-		
+
 		resp.setCharacterEncoding("UTF-8");
 		resp.setContentType("text/plain");
 		OutputStream out = resp.getOutputStream();
 		PrintStream pout = new PrintStream(out, true, "UTF-8");
-		
-		
+
+
 		ConsoleDependencyGraphDumper dgraphDumper = new ConsoleDependencyGraphDumper(pout);
 		dgraphResult.getRoot().accept(dgraphDumper);
 	}
-	
+
 }
