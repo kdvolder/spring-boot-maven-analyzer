@@ -33,6 +33,7 @@ import org.eclipse.aether.repository.RepositoryPolicy;
 import org.eclipse.aether.resolution.ArtifactDescriptorRequest;
 import org.eclipse.aether.resolution.ArtifactDescriptorResult;
 import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.ResolutionErrorPolicy;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
@@ -189,7 +190,7 @@ public class AetherHelper {
 
 	}
 
-	public List<Artifact> resolve(List<Artifact> artifacts) throws Exception {
+	public List<Artifact> resolve(List<Artifact> artifacts, boolean ignoreUnresolved) throws Exception {
         RepositorySystem system = newRepositorySystem();
         DefaultRepositorySystemSession session = newRepositorySystemSession( system );
 
@@ -202,13 +203,25 @@ public class AetherHelper {
         	requests.add(request);
 		}
 
-		List<ArtifactResult> resolveResults = system.resolveArtifacts(session, requests);
+		List<ArtifactResult> resolveResults = safeResolve(system, session, requests);
 		ArrayList<Artifact> resolvedArtifacts = new ArrayList<Artifact>(resolveResults.size());
         for (ArtifactResult ra : resolveResults) {
-        	Assert.isNotNull(ra.getArtifact());
-			resolvedArtifacts.add(ra.getArtifact());
+        	if (ra.getArtifact()==null) {
+        		Assert.isLegal(ignoreUnresolved);
+        	} else {
+        		resolvedArtifacts.add(ra.getArtifact());
+        	}
 		}
         return resolvedArtifacts;
+	}
+
+	private List<ArtifactResult> safeResolve(RepositorySystem system, DefaultRepositorySystemSession session,
+			List<ArtifactRequest> requests) throws ArtifactResolutionException {
+		try {
+			return system.resolveArtifacts(session, requests);
+		} catch (ArtifactResolutionException e) {
+			return e.getResults();
+		}
 	}
 	
 	

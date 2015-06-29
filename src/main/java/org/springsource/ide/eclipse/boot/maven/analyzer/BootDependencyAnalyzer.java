@@ -19,6 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.plexus.PlexusContainerException;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.CollectResult;
 import org.eclipse.aether.graph.DependencyNode;
 import org.springsource.ide.eclipse.boot.maven.analyzer.aether.AetherHelper;
 import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
@@ -125,7 +126,8 @@ public class BootDependencyAnalyzer {
 			Artifact parentPom = Defaults.parentPom(bootVersion);
 			userLog.println("Boot Version: "+bootVersion);
 			
-			DependencyNode tree = aether.getManagedDependencyGraph(parentPom).getRoot();
+			CollectResult collectResult = aether.getManagedDependencyGraph(parentPom);
+			DependencyNode tree = collectResult.getRoot();
 			
 			
 			//The tree/graph just computed is not yet resolved. I.e. dependency structure is known 
@@ -138,7 +140,8 @@ public class BootDependencyAnalyzer {
 			tree.accept(graphBuilder);
 			TypeAndArtifactGraph graph = graphBuilder.getGraph();
 			
-			List<Artifact> resolvedArtifacts = aether.resolve(graph.getArtifacts());
+			boolean ignoreUnresolved = true;
+			List<Artifact> resolvedArtifacts = aether.resolve(graph.getArtifacts(), ignoreUnresolved);
 			for (Artifact artifact : resolvedArtifacts) {
 				addTypesFrom(artifact, graph);
 			}

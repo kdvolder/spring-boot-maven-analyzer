@@ -67,7 +67,8 @@ public class AetherHelperTest extends TestCase {
 			assertNull(artifact.getFile());
 		}
 		
-		artifacts = helper.resolve(artifacts);
+		boolean ignoreUnresolved = false;
+		artifacts = helper.resolve(artifacts, ignoreUnresolved);
 		
 		assertEquals(artifactsCoords.length, artifacts.size());
 
