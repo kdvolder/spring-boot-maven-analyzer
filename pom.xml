@@ -13,7 +13,7 @@
 	</parent>
 
 	<properties>
-		<start-class>org.springsource.ide.eclipse.boot.maven.analyzer.server.RestServer</start-class>
+		<start-class>org.springsource.ide.eclipse.boot.maven.analyzer.server.MavenAnalyzerServer</start-class>
 		<aetherVersion>0.9.1.v20140329</aetherVersion>
 		<mavenVersion>3.1.0</mavenVersion>
 	</properties>

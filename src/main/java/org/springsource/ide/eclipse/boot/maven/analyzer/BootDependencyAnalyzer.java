@@ -45,17 +45,20 @@ public class BootDependencyAnalyzer {
 	 */
 	static Log log = LogFactory.getLog(BootDependencyAnalyzer.class);
 	
-	/**
-	 * Example of how to use this analyzer.
-	 */
-	public static void main(String[] args) throws Exception {
-		log.info("Starting BootDependencyAnalyzer...");
-		BootDependencyAnalyzer analyzer = new BootDependencyAnalyzer(new AetherHelper());
-		analyzer.setBootVersion(Defaults.defaultVersion);
-		analyzer.setXmlFile(new File("boot-completion-data.txt"));
-		analyzer.setUseSpringProvidesInfo(true); 
-		analyzer.run();
-	}
+//	/**
+//	 * Example of how to use this analyzer.
+//	 */
+//	public static void main(String[] args) throws Exception {
+//		log.info("Starting BootDependencyAnalyzer...");
+//		log.info("============== starting =============================");
+//		BootDependencyAnalyzer analyzer = new BootDependencyAnalyzer(new AetherHelper());
+//		analyzer.setBootVersion(Defaults.defaultVersion);
+//		analyzer.setXmlFile(new File("boot-completion-data.txt"));
+//		analyzer.setUseSpringProvidesInfo(true); 
+//		analyzer.run();
+//		log.info("============== Exiting ============================");
+//
+//	}
 
 
 	/**
