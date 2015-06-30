@@ -11,9 +11,11 @@
 package org.springsource.ide.eclipse.boot.maven.analyzer.util;
 
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -161,7 +163,10 @@ public abstract class SimpleCache<Key, Value> {
 		for (Key k : keys) {
 			out.println(k+":");
 			CacheEntry entry = contents.get(k);
-			out.println("   created      : "+new Date(entry.timeCreated));
+			Date date = new Date(entry.timeCreated);
+			SimpleDateFormat df = new SimpleDateFormat("MMM dd, HH:mm:ss zzz");
+			df.setTimeZone(TimeZone.getTimeZone("PST"));
+			out.println("   created      : "+df.format(date));
 			if (entry.isExpired()) {
 				expired++;
                 out.println("   EXPIRED for  : "+entry.timeToLiveString());
