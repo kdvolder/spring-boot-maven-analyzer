@@ -15,7 +15,7 @@ public class Defaults {
 	 * Default spring boot version. Use this if spring boot version isn't specified in the
 	 * request.
 	 */
-	public static final String defaultVersion = "1.2.4.RELEASE";
+	public static final String defaultVersion = "1.3.3.RELEASE";
 
 	/**
 	 * Time before entry in typegraph cache expires and needs to be refreshed.
