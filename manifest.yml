@@ -1,0 +1,9 @@
+applications:
+- name: aetherial-dev
+  host: aetherial-dev
+  memory: 2G
+  disk_quota: 2G
+- name: aetherial-prod
+  host: aetherial-staging
+  memory: 2G
+  disk_quota: 2G
