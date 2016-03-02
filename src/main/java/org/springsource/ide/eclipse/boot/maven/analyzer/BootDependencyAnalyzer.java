@@ -106,7 +106,6 @@ public class BootDependencyAnalyzer {
 		this.aether = aether;
 	}
 
-
 	public void addTypesFrom(final Artifact artifact, final TypeAndArtifactGraph graph) {
 		ArtifactTypeDiscovery discoverer = new ArtifactTypeDiscovery(artifact);
 		discoverer.getTypes(new Requestor<ExternalTypeEntry>() {

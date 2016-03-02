@@ -15,10 +15,14 @@ import java.io.PrintWriter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 import org.springsource.ide.eclipse.boot.maven.analyzer.BootDependencyAnalyzer;
 import org.springsource.ide.eclipse.boot.maven.analyzer.aether.AetherHelper;
@@ -52,6 +56,9 @@ public class AsynchTypeGraphComputer {
 	private FutureUtil futil = new FutureUtil(Executors.newCachedThreadPool());
 
 	private AetherHelper aether;
+
+	@Autowired(required=true)
+	private TaskScheduler taskScheduler;
 
 	private SimpleCache<String, TypeGraphResult> cache = new SimpleCache<String, TypeGraphResult>(mvnExecutor) {
 		@Override
@@ -107,6 +114,20 @@ public class AsynchTypeGraphComputer {
 
 	public void showStateInfo(PrintWriter out) {
 		cache.showState(out);
+	}
+
+	@PostConstruct
+	public void scheduleTasks() {
+		//Make the interval configurable?
+		taskScheduler.scheduleAtFixedRate(
+				cache::clean,
+				TimeUnit.MINUTES.toMillis(30)
+		);
+
+		taskScheduler.scheduleAtFixedRate(
+				() -> mvnExecutor.submit(aether::cleanLocalRepo),
+				TimeUnit.HOURS.toMillis(6)
+		);
 	}
 
 }

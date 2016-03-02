@@ -10,11 +10,14 @@
  *******************************************************************************/
 package org.springsource.ide.eclipse.boot.maven.analyzer.aether;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -24,7 +27,6 @@ import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.collection.CollectResult;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -35,7 +37,6 @@ import org.eclipse.aether.resolution.ArtifactDescriptorResult;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
-import org.eclipse.aether.resolution.ResolutionErrorPolicy;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
@@ -43,6 +44,8 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.util.graph.manager.DependencyManagerUtils;
 import org.eclipse.aether.util.graph.transformer.ConflictResolver;
 import org.springframework.stereotype.Component;
+import org.springsource.ide.eclipse.boot.maven.analyzer.conf.Defaults;
+import org.springsource.ide.eclipse.boot.maven.analyzer.server.AetherialController;
 import org.springsource.ide.eclipse.boot.maven.analyzer.util.Assert;
 
 /**
@@ -50,19 +53,21 @@ import org.springsource.ide.eclipse.boot.maven.analyzer.util.Assert;
  * of trying to use Maven embedding which we have found to be difficult to use and unstable (unstability
  * is probably more due to the fact that its difficult to use and things most likely didn't get wired together
  * properly because of my own misunderstandings rather than the actual quality of maven).
- * 
+ *
  * However, aether seems to do exactly what we need and has much clearer documentation on how
  * to setup and use properly).
- * 
+ *
  * See: http://eclipse.org/aether/documentation/
- * 
- * Especially the demo project is very helpful: 
+ *
+ * Especially the demo project is very helpful:
  * http://git.eclipse.org/c/aether/aether-demo.git/tree/
- *  
+ *
  * @author Kris De Volder
  */
 @Component
 public class AetherHelper {
+
+	static Log log = LogFactory.getLog(AetherialController.class);
 
 	public RepositorySystem newRepositorySystem() {
 		/*
@@ -92,7 +97,7 @@ public class AetherHelper {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 		//session.set(resolutionErrorPolicy);
 
-        LocalRepository localRepo = new LocalRepository( "target/local-repo" );
+        LocalRepository localRepo = new LocalRepository(Defaults.localRepoPath);
         session.setLocalRepositoryManager( system.newLocalRepositoryManager( session, localRepo ) );
 
         session.setTransferListener( new ConsoleTransferListener() );
@@ -103,10 +108,10 @@ public class AetherHelper {
 
         return session;
     }
-	
+
     public List<RemoteRepository> newRepositories( RepositorySystem system, RepositorySystemSession session )
     {
-        return addSpringRepos(new ArrayList<RemoteRepository>( Arrays.asList( 
+        return addSpringRepos(new ArrayList<RemoteRepository>( Arrays.asList(
         		newCentralRepository()
         )));
     }
@@ -115,26 +120,26 @@ public class AetherHelper {
     {
         return new RemoteRepository.Builder( "central", "default", "http://central.maven.org/maven2/" ).build();
     }
-    
+
 	//TODO: These details don't belong in here. Should be contributed via dependency injection somehow.
     private static List<RemoteRepository> addSpringRepos(ArrayList<RemoteRepository> repos) {
     	Builder builder = new RemoteRepository.Builder("spring-milestones", "default", "http://repo.springsource.org/milestone");
     	builder.setSnapshotPolicy(new RepositoryPolicy(
-    			/*enabled*/ false, 
+    			/*enabled*/ false,
     			RepositoryPolicy.UPDATE_POLICY_DAILY,
     			RepositoryPolicy.CHECKSUM_POLICY_IGNORE
     	));
     	repos.add(builder.build());
     	builder = new RemoteRepository.Builder("spring-snapshots", "default", "http://repo.springsource.org/snapshot");
     	builder.setSnapshotPolicy(new RepositoryPolicy(
-    			/*enabled*/ true, 
+    			/*enabled*/ true,
     			RepositoryPolicy.UPDATE_POLICY_DAILY,
     			RepositoryPolicy.CHECKSUM_POLICY_IGNORE
     	));
     	repos.add(builder.build());
     	return repos;
 	}
-	
+
 	public List<Dependency> getManagedDependencies(Artifact artifact) throws Exception {
         RepositorySystem system = newRepositorySystem();
 //
@@ -149,7 +154,7 @@ public class AetherHelper {
         ArtifactDescriptorResult descriptorResult = system.readArtifactDescriptor( session, descriptorRequest );
 
         return descriptorResult.getManagedDependencies();
-        
+
 //        collectRequest.setManagedDependencies( descriptorResult.getManagedDependencies() );
 //        collectRequest.setRepositories( descriptorRequest.getRepositories() );
 //
@@ -158,11 +163,11 @@ public class AetherHelper {
 //        collectResult.getRoot().accept( new ConsoleDependencyGraphDumper() );
  	}
 
-	
+
 	/**
 	 * Given a a 'parentPom' artifact constructs a dependency graph with all
 	 * managed dependencies as roots.
-	 * @return 
+	 * @return
 	 */
 	public CollectResult getManagedDependencyGraph(Artifact parentPom) throws Exception {
         RepositorySystem system = newRepositorySystem();
@@ -170,15 +175,15 @@ public class AetherHelper {
 
         session.setConfigProperty( ConflictResolver.CONFIG_PROP_VERBOSE, true );
         session.setConfigProperty( DependencyManagerUtils.CONFIG_PROP_VERBOSE, true );
-        
+
         ArtifactDescriptorRequest descriptorRequest = new ArtifactDescriptorRequest();
         descriptorRequest.setArtifact( parentPom );
         descriptorRequest.setRepositories( newRepositories( system, session ) );
         ArtifactDescriptorResult descriptorResult = system.readArtifactDescriptor( session, descriptorRequest );
 
         CollectRequest collectRequest = new CollectRequest();
-        
-        
+
+
         //collectRequest.setRootArtifact( descriptorResult.getArtifact() );
         collectRequest.setDependencies( descriptorResult.getManagedDependencies() );
         collectRequest.setManagedDependencies( descriptorResult.getManagedDependencies() );
@@ -223,6 +228,11 @@ public class AetherHelper {
 			return e.getResults();
 		}
 	}
-	
-	
+
+	public void cleanLocalRepo() {
+		File localRepo = new File(Defaults.localRepoPath);
+		log.info("Cleaning local repo at '"+localRepo.getAbsolutePath()+"' ...");
+		FileUtils.deleteQuietly(localRepo);
+		log.info("DONE Cleaning local repo");
+	}
 }

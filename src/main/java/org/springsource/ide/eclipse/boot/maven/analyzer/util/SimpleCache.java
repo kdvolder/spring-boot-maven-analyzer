@@ -12,9 +12,12 @@ package org.springsource.ide.eclipse.boot.maven.analyzer.util;
 
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -193,6 +196,19 @@ public abstract class SimpleCache<Key, Value> {
 		} else {
 			return "Computing ...";
 		}
+	}
+
+	public synchronized void clean() {
+		Iterator<CacheEntry> iter = contents.values().iterator();
+		int removed = 0;
+		while (iter.hasNext()) {
+			CacheEntry e = iter.next();
+			if (e.isExpired()) {
+				iter.remove();
+				removed++;
+			}
+		}
+		log.info("Removed "+removed+" expired cache entries!");
 	}
 
 }

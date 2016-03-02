@@ -14,6 +14,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.ITemplateResolver;
@@ -35,19 +37,24 @@ public class MavenAnalyzerServer {
     	return createDefaultTemplateEngine();
     }
 
+    @Bean
+    public TaskScheduler taskScheduler() {
+    	return new ThreadPoolTaskScheduler();
+    }
+
 	public static TemplateEngine createDefaultTemplateEngine() {
 		TemplateEngine engine = new TemplateEngine();
     	ITemplateResolver resolver = new ClassLoaderTemplateResolver();
 		engine.setTemplateResolver(resolver);
     	return engine;
 	}
-    
-//    @Bean  
+
+//    @Bean
 //    public CacheManager cacheManager() {
 //    	SimpleCacheManager cm = new SimpleCacheManager();
 //    	cm.setCaches(Arrays.asList(
 //    			new ConcurrentMapCache("default")
 //    	));
 //    	return cm;
-//    }    
+//    }
 }

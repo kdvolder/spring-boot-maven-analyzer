@@ -1,21 +1,18 @@
 package org.springsource.ide.eclipse.boot.maven.analyzer.conf;
 
+import java.util.concurrent.TimeUnit;
+
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 
 public class Defaults {
-
-	//Timeunit constants expressed in millis
-	private static final int SECOND = 1000;
-	private static final int MINUTE = 60*SECOND;
-	private static final int HOUR   = 60*MINUTE;
-	private static final int DAY    = 24*HOUR;
 
 	/**
 	 * Default spring boot version. Use this if spring boot version isn't specified in the
 	 * request.
 	 */
 	public static final String defaultVersion = "1.3.3.RELEASE";
+	public static final String localRepoPath = "target/local-repo";
 
 	/**
 	 * Time before entry in typegraph cache expires and needs to be refreshed.
@@ -24,7 +21,7 @@ public class Defaults {
 	 * releases once a day but don't get bogged down running doing maven
 	 * resolution overly often.
 	 */
-	public static long cacheTTL = 1 * DAY;
+	public static long cacheTTL = TimeUnit.DAYS.toMillis(1);
 
 	/**
 	 * Spring boot parent pom artifact. This will be used to determine managed
