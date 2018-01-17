@@ -126,7 +126,7 @@ public class AsynchTypeGraphComputer {
 
 		taskScheduler.scheduleAtFixedRate(
 				() -> mvnExecutor.submit(aether::cleanLocalRepo),
-				TimeUnit.HOURS.toMillis(6)
+				TimeUnit.HOURS.toMillis(1)
 		);
 	}
 

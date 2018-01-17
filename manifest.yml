@@ -4,6 +4,10 @@ applications:
   memory: 2G
   disk_quota: 2G
 - name: aetherial-prod
+  host: aetherial
+  memory: 4G
+  disk_quota: 4G
+- name: aetherial-staging
   host: aetherial-staging
-  memory: 2G
-  disk_quota: 2G
+  memory: 4G
+  disk_quota: 4G
