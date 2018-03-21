@@ -127,48 +127,63 @@ public class BootDependencyAnalyzer {
 			userLog.println("=== Dependency Graph Analysis Report ===");
 			Artifact parentPom = Defaults.parentPom(bootVersion);
 			userLog.println("Boot Version: "+bootVersion);
-
-			CollectResult collectResult = aether.getManagedDependencyGraph(parentPom);
-			DependencyNode tree = collectResult.getRoot();
-
-
-			//The tree/graph just computed is not yet resolved. I.e. dependency structure is known
-			// but the binary jar artefacts are not yet downloaded or resolved to actual files.
-			//The graph also has verbose options for conflict resolution and managed dependencies enabled.
-			//This means that the graph still contains data about conflicts and changes made based on dependency management.
-			//IMPORTANT: This graph may contain duplicate artifacts and is not suitable for resolution (according to aether docs).
-
-			GraphBuildingDependencyVisitor graphBuilder = new GraphBuildingDependencyVisitor(anf);
-			tree.accept(graphBuilder);
-			TypeAndArtifactGraph graph = graphBuilder.getGraph();
-
-			boolean ignoreUnresolved = true;
-			List<Artifact> resolvedArtifacts = aether.resolve(graph.getArtifacts(), ignoreUnresolved);
-			for (Artifact artifact : resolvedArtifacts) {
-				addTypesFrom(artifact, graph);
-			}
-
-			//Step 1 collect the infos from 'spring.provides' properties file so they can be used in the next stage.
-			if (useSpringProvidesInfo) {
-				providesInfo = new SpringProvidesInfo(anf);
+			if (getMajorVersion(bootVersion) >= 2) {
+				// See: https://www.pivotaltracker.com/story/show/156152874
+				userLog.println("JarType assist support disabled from Boot 2.0.0 onward.");
+				userLog.println("Creating a dummy typegraph to satisfy api contract");
+				TypeAndArtifactGraph graph = new TypeAndArtifactGraph();
+				saveAsXML(graph);
+			} else {
+				CollectResult collectResult = aether.getManagedDependencyGraph(parentPom);
+				DependencyNode tree = collectResult.getRoot();
+	
+	
+				//The tree/graph just computed is not yet resolved. I.e. dependency structure is known
+				// but the binary jar artefacts are not yet downloaded or resolved to actual files.
+				//The graph also has verbose options for conflict resolution and managed dependencies enabled.
+				//This means that the graph still contains data about conflicts and changes made based on dependency management.
+				//IMPORTANT: This graph may contain duplicate artifacts and is not suitable for resolution (according to aether docs).
+	
+				GraphBuildingDependencyVisitor graphBuilder = new GraphBuildingDependencyVisitor(anf);
+				tree.accept(graphBuilder);
+				TypeAndArtifactGraph graph = graphBuilder.getGraph();
+	
+				boolean ignoreUnresolved = true;
+				List<Artifact> resolvedArtifacts = aether.resolve(graph.getArtifacts(), ignoreUnresolved);
 				for (Artifact artifact : resolvedArtifacts) {
-					providesInfo.process(artifact);
+					addTypesFrom(artifact, graph);
 				}
+	
+				//Step 1 collect the infos from 'spring.provides' properties file so they can be used in the next stage.
+				if (useSpringProvidesInfo) {
+					providesInfo = new SpringProvidesInfo(anf);
+					for (Artifact artifact : resolvedArtifacts) {
+						providesInfo.process(artifact);
+					}
+				}
+	
+				//Step 2 massage the graph to disambiguate type suggestions based on springprovides infos.
+				if (useSpringProvidesInfo) {
+					GraphSimplifier.simplify(graph, providesInfo, userLog);
+				}
+	
+				//Step 4: save massaged graph to designated output stream.
+				saveAsXML(graph);
 			}
-
-	//		//Step 2 massage the graph to disambiguate type suggestions based on springprovides infos.
-			if (useSpringProvidesInfo) {
-				GraphSimplifier.simplify(graph, providesInfo, userLog);
-			}
-
-			//Step 4: save massaged graph to designated output stream.
-			saveAsXML(graph);
 		} finally {
 			userLog.dispose();
 		}
 
 	}
 
+
+	private static int getMajorVersion(String bootVersion) {
+		int dot = bootVersion.indexOf('.');
+		if (dot>=0) {
+			return Integer.parseInt(bootVersion.substring(0, dot));
+		}
+		return 0;
+	}
 
 	private synchronized UserLog getUserLog() {
 		if (userLog==null) {
